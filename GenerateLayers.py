@@ -5,9 +5,6 @@ class GenerateLayers:
     kernalSize = [3, 5, 7, 9, 11, 13, 15, 17, 19]
     filterSize = [8, 16, 32, 64, 128, 256, 512]
 
-    def __init__(self):
-        pass
-
     @staticmethod
     def generatePoolLayer (type, layerIndex):
         poolLayer = {
@@ -88,24 +85,25 @@ class GenerateLayers:
 
         return outputLayer
     
-    def generateLayer (self, blockID, layerIndex):
+    @staticmethod
+    def generateLayer (blockID, layerIndex):
         match blockID:
             case 1:
-                return self.generateResBlock(layerIndex)
+                return GenerateLayers.generateResBlock(layerIndex)
             case 2:
-                return self.generateConvLayer(layerIndex)
+                return GenerateLayers.generateConvLayer(layerIndex)
             case 3:
-                return self.generatePoolLayer(type=3, layerIndex=layerIndex)
+                return GenerateLayers.generatePoolLayer(type=3, layerIndex=layerIndex)
             case 4:
-                return self.generatePoolLayer(type=4, layerIndex=layerIndex)
+                return GenerateLayers.generatePoolLayer(type=4, layerIndex=layerIndex)
             case 5:
-                return self.generateBottleNeckDepthWise(layerIndex)
+                return GenerateLayers.generateBottleNeckDepthWise(layerIndex)
             case 6 | 7:
                 # Ensure that the combining layers can actually be used
                 # If they cant then just select a new layer type
                 if layerIndex < 2:
                     blockID = random.randint(1, 5) # Currently a magic number
-                    return self.generateLayer(blockID, layerIndex) 
-                return self.generateCombineBlock(type=blockID, layerIndex=layerIndex)
+                    return GenerateLayers.generateLayer(blockID, layerIndex) 
+                return GenerateLayers.generateCombineBlock(type=blockID, layerIndex=layerIndex)
             case 8:
-                return self.generateOutputLayer(layerIndex)
+                return GenerateLayers.generateOutputLayer(layerIndex)
