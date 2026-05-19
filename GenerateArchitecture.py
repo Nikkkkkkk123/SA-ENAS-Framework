@@ -13,10 +13,35 @@ class GenerateArchitecture:
     noLayerTypes = 7
     noParam = 5
 
-    # Function Name: generateArchitecture
+    """ 
+    Function Name: generateArchitectures
+    Description: This function loops to generate the requried number of architectures and stores them in an array to be returned
+    Parameter: 
+        noArchs: The number of architectures to generate
+        length: The length of the architecture to generate (including the output layer)
+    Return: 
+        architectures: An array of architectures
+    """
+    def generateArchitectures (noArchs, length):
+        architectures = []
+
+        for i in range (noArchs):
+            architectures.append(GenerateArchitecture.generateArchitecture(length))
+
+        return architectures
+    
+    """
+    Function Name: generateArchitecture
+    Description: This function generates a single architecture of the required length and then returns it
+    Parameter:
+        length: The length of the architecture to generate (including the output layer)
+    Return:
+        architecture: an array of layers for a single full architecture
+    """
     def generateArchitecture (length):
         architecture = []
-        
+
+        # Currently implemented as a safe guard for finding active layers
         inputLayer = {
             "type": "IN",
         }

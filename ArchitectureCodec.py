@@ -30,7 +30,7 @@ class ArchitectureCodec:
         encodedArch = []
         
         # Encode each layer of the architecture
-        for i in range (len(architecture)):
+        for i in range (1, len(architecture)):
             layer = architecture[i]
             encodedType = ArchitectureCodec.layerType[layer["type"]]
 
@@ -89,7 +89,7 @@ class ArchitectureCodec:
         activeLayers = np.zeros(len(architecture), dtype=bool) # Create array with all false values
         # Get the outputlayer connection layer and check it as a active layer
         activeLayers[len(architecture) - 1] = True
-        
+
         outputConnection = architecture[len(architecture) - 1]["Connection 1"]
         connectedLayer = architecture[outputConnection]
 

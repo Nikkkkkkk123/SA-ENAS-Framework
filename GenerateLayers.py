@@ -12,7 +12,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": 0,
-            "Kernal Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernalSize)
         }
 
         return poolLayer
@@ -24,7 +24,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": random.choice(GenerateLayers.filterSize),
-            "Kernal Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernalSize)
         }
 
         return convLayer
@@ -36,7 +36,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": random.choice(GenerateLayers.filterSize),
-            "Kernal Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernalSize)
         }
 
         return resBlock
@@ -48,7 +48,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": random.choice(GenerateLayers.filterSize),
-            "Kernal Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernalSize)
         }
 
         return bottleNeckDepthWise
@@ -60,7 +60,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": 0,
-            "Kernal Size": 0
+            "Kernel Size": 0
         }
 
         # Below is to check that the two connected layers are not the same
@@ -87,6 +87,7 @@ class GenerateLayers:
     
     @staticmethod
     def generateLayer (blockID, layerIndex):
+        blockID = 2
         match blockID:
             case 1:
                 return GenerateLayers.generateResBlock(layerIndex)

@@ -1,6 +1,11 @@
 import random
 from GenerateArchitecture import GenerateArchitecture as ga
 from ArchitectureCodec import ArchitectureCodec as ac
+"""
+    NOTICE NOTICE NOTICE
+    This is a notice that this file is currently not being used. It is currently being kept as a placeholder for an architecture class
+    NOTICE NOTICE NOTICE
+"""
 
 class Architecture:
     """
@@ -13,7 +18,8 @@ class Architecture:
     def __init__(self, length):
         self.length = length
         self.architecture = ga.generateArchitecture(length)
-        self.encoded = self.architecture # Still have to implement the encoding function
-        ac.encode(self.architecture)
+        self.encoded = ac.encode(self.architecture)
+        self.decoded = ac.decode(self.encoded)
+        ac.activeLayers(self.architecture)
     
 
