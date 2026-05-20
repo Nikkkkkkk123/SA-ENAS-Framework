@@ -80,23 +80,24 @@ class GenerateLayers:
     def generateOutputLayer (layerIndex):
         outputLayer = {
             "type": "OUT",
-            "Connection 1": random.randint(0, layerIndex),
+            "Connection 1": random.randint(1, layerIndex), # Currently enforcing not picking the input layer. At the moment this is a test input but may become rule
         }
 
         return outputLayer
     
     @staticmethod
     def generateLayer (blockID, layerIndex):
-        blockID = 2
+        # This is just for testing purposes to generate specific layer types for testing
+        blockID = 1
         match blockID:
             case 1:
                 return GenerateLayers.generateResBlock(layerIndex)
             case 2:
                 return GenerateLayers.generateConvLayer(layerIndex)
             case 3:
-                return GenerateLayers.generatePoolLayer(type=3, layerIndex=layerIndex)
+                return GenerateLayers.generatePoolLayer(3, layerIndex)
             case 4:
-                return GenerateLayers.generatePoolLayer(type=4, layerIndex=layerIndex)
+                return GenerateLayers.generatePoolLayer(4, layerIndex)
             case 5:
                 return GenerateLayers.generateBottleNeckDepthWise(layerIndex)
             case 6 | 7:

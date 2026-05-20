@@ -86,26 +86,30 @@ class ArchitectureCodec:
         return decodedArch
     
     def activeLayers (architecture):
-        activeLayers = np.zeros(len(architecture), dtype=bool) # Create array with all false values
+        isactiveLayer = np.zeros(len(architecture), dtype=bool) # Create array with all false values
         # Get the outputlayer connection layer and check it as a active layer
-        activeLayers[len(architecture) - 1] = True
+        isactiveLayer[len(architecture) - 1] = True
+        activeArchitecture = []
 
         outputConnection = architecture[len(architecture) - 1]["Connection 1"]
         connectedLayer = architecture[outputConnection]
 
-        ArchitectureCodec.checkConnection(architecture, outputConnection, connectedLayer, activeLayers)
-        for i in range (len(activeLayers)):
-            print(f"Layer {i}: {architecture[i]}, Active: {activeLayers[i]}")
+        ArchitectureCodec.checkConnection(architecture, outputConnection, connectedLayer, isactiveLayer)
 
-    def checkConnection (architecture, layerIndex, connectedLayer, activeLayers):
+        for layer in range (len(architecture)):
+            if isactiveLayer[layer]:
+                activeArchitecture.append(architecture[layer])
+        return activeArchitecture
+
+    def checkConnection (architecture, layerIndex, connectedLayer, isactiveLayer):
         # Set the connected layer as active
-        activeLayers[layerIndex] = True
+        isactiveLayer[layerIndex] = True
 
         # Check the first connected layer of each layer. If it is sum / concat layer then also check the second connected layer
         if layerIndex != 0:
             connectedNode = connectedLayer["Connection 1"] # Get the connection node from the layer parameters
-            ArchitectureCodec.checkConnection(architecture, connectedNode, architecture[connectedNode], activeLayers)
+            ArchitectureCodec.checkConnection(architecture, connectedNode, architecture[connectedNode], isactiveLayer)
 
             if connectedLayer["type"] == 'CON' or connectedLayer["type"] == 'SUM':
                 connectedNode2 = connectedLayer["Connection 2"]
-                ArchitectureCodec.checkConnection(architecture, connectedNode2, architecture[connectedNode2], activeLayers)
+                ArchitectureCodec.checkConnection(architecture, connectedNode2, architecture[connectedNode2], isactiveLayer)
