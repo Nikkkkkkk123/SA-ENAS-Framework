@@ -1,8 +1,14 @@
 # terminal input parameters
 import argparse
 from Evolve import Evolve as ev
+import zlib
+import os
+import numpy as np
+from PIL import Image
+import math
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description="SA-ENAS Framework")
     
     parser.add_argument("--population_size", type=int, default=10, help="The size of the population for each generation.")

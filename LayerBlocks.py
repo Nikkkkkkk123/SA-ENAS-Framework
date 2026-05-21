@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch
 import numpy as np
+import os
+import math
 
 # Taken from https://github.com/sg-nm/cgp-cnn-PyTorch/blob/master/cnn_model.py
 class ConvBlock(nn.Module):
@@ -14,8 +16,8 @@ class ConvBlock(nn.Module):
         )
     
     def forward(self, x):
-        x = self.conv(x)
-        return x
+        output = self.conv(x)
+        return output
 
 class ResBlock (nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1):
@@ -52,7 +54,7 @@ class ResBlock (nn.Module):
 class MaxPool (nn.Module):
     def __init__(self, kernel_size, stride):
         super(MaxPool, self).__init__()
-        self.pool = nn.MaxPool2d(kernel_size, stride)
+        self.pool = nn.MaxPool2d(2, 2)
 
     def forward(self, x):
         x = self.pool(x)
@@ -61,7 +63,7 @@ class MaxPool (nn.Module):
 class AvgPool (nn.Module):
     def __init__(self, kernel_size, stride):
         super(AvgPool, self).__init__()
-        self.pool = nn.AvgPool2d(kernel_size, stride)
+        self.pool = nn.AvgPool2d(2, 2)
 
     def forward(self, x):
         x = self.pool(x)
@@ -87,14 +89,17 @@ class Con (nn.Module):
 
     def forward(self, input1, input2):
         # Currently a place hodler and untested
-        output = torch.cat((input1, input2), dim=1)
+        output = torch.cat((input1,  input2), dim=1)
         return output
 
 
 class LinearBlock (nn.Module):
     def __init__(self, in_features, out_features):
         super(LinearBlock, self).__init__()
-        self.linear = nn.Sequential(nn.Linear(in_features * 28 * 28, out_features)) # This is currently hard coded to the test image size
+        self.linear = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(in_features * 28 * 28, out_features)
+        ) # This is currently hard coded to the test image size
     def forward(self, x):
         x = self.linear(x)
         return x
@@ -115,12 +120,15 @@ class model (nn.Module):
         self.layers = nn.ModuleList()
 
         self.architecture = architecture
+        print("Full Architecture", end=" ")
+        architecture.print()
 
         # Due to architecture generation allowing for layers to go to different layers at once, filter sizes need to be stored so they can be obtained as the 8th layer may still take input from the 1st layer
         self.layerSizes = np.zeros(len(self.architecture.getFullArch())+ 1, dtype=int) # Create array with all 0 values
-        self.layerSizes[0] = inputChannels # Set the input layer size to the number 
+        self.layerSizes[0] = 1
+
         # Loop through each layer (skipping the input layer as it will cause an error)
-        print(self.architecture.getActiveArch())
+        print("Active: ", self.architecture.getActiveArch())
         for layer in architecture.getActiveArch()[1:]:
             archLayer = self.layerSwitch(layer, noClasses)
 
@@ -131,7 +139,7 @@ class model (nn.Module):
     
     """
     Function Name: layerSwitch
-    Description: This is a helper function that takes the layer being intialised and returns the corresponding layer.
+    Description: This is a helper function that takes the layer being intialilayer["Kernel Size"]sed and returns the corresponding layer.
     Parameter: 
         layer: The layer in the architecture being initalisaed
         noClasses: The number of classes that the dataset uses
@@ -159,27 +167,22 @@ class model (nn.Module):
             case "SUM":
                 # Currently not tested
                 # Get the two connected layers so that they can be summed together
-                layer1 = self.architecture.getConnectedLayer(layer, 1)
-                layer2 = self.architecture.getConnectedLayer(layer, 2)
+                layer1 = self.layersIndex.get(layer["Connection 1"])
+                layer2 = self.layersIndex.get(layer["Connection 2"])
 
-                generatedLayer = Sum().forward(layer1, layer2)
+                generatedLayer = Sum()
 
-                self.layerSizes[self.architecture.getLayerIndex(layer)] = max(connectionSize, self.getConnectionSize(layer["Connection 2"])) # Same as "RB". get the max so that the right sized output is being used
+                self.layerSizes[self.architecture.getLayerIndex(layer)] = max(self.getConnectionSize(layer["Connection 1"]), self.getConnectionSize(layer["Connection 2"])) # Same as "RB". get the max so that the right sized output is being used
                 return generatedLayer
             case "CON":
-                # Filler. currently not impelemented
-                layer1 = self.architecture.getConnectedLayer(layer, 1)
-                layer2 = self.architecture.getConnectedLayer(layer, 2)
-
-                generatedLayer = Con().forward(layer1, layer2)
+                generatedLayer = Con()
                 self.layerSizes[self.architecture.getLayerIndex(layer)] = connectionSize + self.getConnectionSize(layer["Connection 2"])
                 return generatedLayer
             case "MP" | "AP":
                 generatedLayer = MaxPool(layer["Kernel Size"], layer["Kernel Size"]) if layer["type"] == "MP" else AvgPool(layer["Kernel Size"], layer["Kernel Size"])
-                self.layerSizes[self.architecture.getLayerIndex(layer)] = connectionSize
+                self.layerSizes[self.architecture.getLayerIndex(layer)] = int(connectionSize / 2) if connectionSize > 1 else 1 
                 return generatedLayer
             case "OUT":
-                print(self.layerSizes)
                 return LinearBlock(connectionSize, noClasses)
             case "IN":
                 return None # This is just a skip as there is no layer for the input layer
@@ -193,9 +196,32 @@ class model (nn.Module):
         self.layerSizes[layer]: The output size of the connected layer.
     """
     def getConnectionSize (self, layer):
-        return self.layerSizes[layer]
+        return int(self.layerSizes[layer])
+    
+    def main (self, x):
+        # Known bug: The for loop assumes linearity but it actually is not so if input layer goes to both resblock and another resblock the second is assuming the input is from the first resblock and not the input layer
+        output = [None] * (len(self.layers)+1)
+        output[0] = x
+        index = 1
+        for layer in self.layers:
+            if isinstance(layer, ConvBlock) | isinstance(layer, ResBlock):
+                # Need to get the connected layers index in the output array so that if one layer outputs to multiple then it is using the correct input size
+                output[index] = layer(output[index - 1])
+            elif isinstance(layer, LinearBlock):
+                temp = output[index - 1].view(output[index - 1].size(0), -1)
+                output[index] = layer(temp)
+            elif isinstance(layer, Con) | isinstance(layer, Sum):
+                input1 = output[self.layers.index(layer) - 1] 
+                input2 = output[self.layers.index(layer) - 1] 
+                output[index] = layer(input1, input2)
+            elif isinstance(layer, MaxPool) | isinstance(layer, AvgPool):
+                temp = layer(output[index - 1])
+                if output[index - 1].size(1) > 1:
+                    output[index] = temp
+                else:
+                    output[index] = output[index - 1]               
+            index += 1
+        return output[index - 1]
 
     def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
-        return x
+        return self.main(x)

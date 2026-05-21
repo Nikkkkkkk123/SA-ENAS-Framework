@@ -15,6 +15,9 @@ class Architecture:
         self.encodedArch = ac.encode(architecture)
         self.activeArch = ac.activeLayers(architecture)
         self.performance = 0 # Currently placeholder
+
+    def print (self):
+        print(self.fullArch)
     
     """
     Below are getter functions for the architecture class.

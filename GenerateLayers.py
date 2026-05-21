@@ -55,10 +55,11 @@ class GenerateLayers:
     
     @staticmethod
     def generateCombineBlock (type, layerIndex):
+        type = 6
         combineBlock = {
             "type": "CON" if type == 6 else "SUM",
-            "Connection 1": random.randint(0, layerIndex),
-            "Connection 2": random.randint(0, layerIndex),
+            "Connection 1": random.randint(1, layerIndex), # Stating at 1 to avoid it concatinating with the "input"
+            "Connection 2": random.randint(1, layerIndex),
             "Filter Size": 0,
             "Kernel Size": 0
         }
@@ -67,7 +68,7 @@ class GenerateLayers:
         # If they are then two different connection nodes are randomly selected
         # The first is then checked. if same then uses the second number
         if combineBlock["Connection 1"] == combineBlock["Connection 2"]:
-            potentialConnections = random.sample(range(0, layerIndex), 2)
+            potentialConnections = random.sample(range(1, layerIndex), 2)
 
             if combineBlock["Connection 1"] == potentialConnections[0]:
                 combineBlock["Connection 2"] = potentialConnections[1]
@@ -88,6 +89,7 @@ class GenerateLayers:
     @staticmethod
     def generateLayer (blockID, layerIndex):
         # This is just for testing purposes to generate specific layer types for testing
+        #blockID = random.randint(3, 4)
         match blockID:
             case 1:
                 return GenerateLayers.generateResBlock(layerIndex)
@@ -104,7 +106,7 @@ class GenerateLayers:
             case 6 | 7:
                 # Ensure that the combining layers can actually be used
                 # If they cant then just select a new layer type
-                if layerIndex < 2:
+                if layerIndex < 3:
                     blockID = random.randint(1, 5) # Currently a magic number
                     return GenerateLayers.generateLayer(blockID, layerIndex) 
                 return GenerateLayers.generateCombineBlock(type=blockID, layerIndex=layerIndex)
