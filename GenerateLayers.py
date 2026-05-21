@@ -88,7 +88,6 @@ class GenerateLayers:
     @staticmethod
     def generateLayer (blockID, layerIndex):
         # This is just for testing purposes to generate specific layer types for testing
-        blockID = 1
         match blockID:
             case 1:
                 return GenerateLayers.generateResBlock(layerIndex)
@@ -99,7 +98,9 @@ class GenerateLayers:
             case 4:
                 return GenerateLayers.generatePoolLayer(4, layerIndex)
             case 5:
-                return GenerateLayers.generateBottleNeckDepthWise(layerIndex)
+                blockID = random.randint(1, 2)
+                return GenerateLayers.generateLayer(blockID, layerIndex)
+                #return GenerateLayers.generateBottleNeckDepthWise(layerIndex)
             case 6 | 7:
                 # Ensure that the combining layers can actually be used
                 # If they cant then just select a new layer type

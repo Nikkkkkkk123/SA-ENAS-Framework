@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch
+import numpy as np
 
 # Taken from https://github.com/sg-nm/cgp-cnn-PyTorch/blob/master/cnn_model.py
 class ConvBlock(nn.Module):
@@ -48,6 +49,24 @@ class ResBlock (nn.Module):
 
         return x
 
+class MaxPool (nn.Module):
+    def __init__(self, kernel_size, stride):
+        super(MaxPool, self).__init__()
+        self.pool = nn.MaxPool2d(kernel_size, stride)
+
+    def forward(self, x):
+        x = self.pool(x)
+        return x
+
+class AvgPool (nn.Module):
+    def __init__(self, kernel_size, stride):
+        super(AvgPool, self).__init__()
+        self.pool = nn.AvgPool2d(kernel_size, stride)
+
+    def forward(self, x):
+        x = self.pool(x)
+        return x
+
 class Sum (nn.Module):
     def __init__(self):
         super(Sum, self).__init__()
@@ -75,8 +94,7 @@ class Con (nn.Module):
 class LinearBlock (nn.Module):
     def __init__(self, in_features, out_features):
         super(LinearBlock, self).__init__()
-        self.linear = nn.Sequential(nn.Flatten(),
-            nn.Linear(in_features * 28 * 28, out_features)) # This is currently hard coded to the test image size
+        self.linear = nn.Sequential(nn.Linear(in_features * 28 * 28, out_features)) # This is currently hard coded to the test image size
     def forward(self, x):
         x = self.linear(x)
         return x
@@ -86,7 +104,7 @@ class model (nn.Module):
     Function Name: __init__
     Description: This is the constructure function for the model class. It takes an input architecture and initialises the corresponding architecture
     Parameter: 
-        architecture: The architecture to be initialised
+        architecture: The architecture object to be initialised
         noClasses: The number of classes that the dataset uses
         inputChannels: The number of color channels in the input images. This is needed to initialise the first layer correctly.
     Return: 
@@ -94,12 +112,16 @@ class model (nn.Module):
     """
     def __init__(self, architecture, noClasses, inputChannels):
         super(model, self).__init__()
-        self.architecture = architecture
         self.layers = nn.ModuleList()
+
+        self.architecture = architecture
+
         # Due to architecture generation allowing for layers to go to different layers at once, filter sizes need to be stored so they can be obtained as the 8th layer may still take input from the 1st layer
-        self.layerSizes = [inputChannels] 
+        self.layerSizes = np.zeros(len(self.architecture.getFullArch())+ 1, dtype=int) # Create array with all 0 values
+        self.layerSizes[0] = inputChannels # Set the input layer size to the number 
         # Loop through each layer (skipping the input layer as it will cause an error)
-        for layer in architecture[1:]:
+        print(self.architecture.getActiveArch())
+        for layer in architecture.getActiveArch()[1:]:
             archLayer = self.layerSwitch(layer, noClasses)
 
             # I like the switch case being used but if it is an input layer it returns none causing an error
@@ -121,7 +143,7 @@ class model (nn.Module):
         match layer["type"]:
             case "CB":
                 generatedlayer = ConvBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
-                self.layerSizes.append(layer["Filter Size"]) # This is to update the input for the next layer
+                self.layerSizes[self.architecture.getLayerIndex(layer)] = layer["Filter Size"] # This is to update the input for the next layer
                 return generatedlayer
             case "RB":
                 generatedlayer = ResBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
@@ -131,22 +153,33 @@ class model (nn.Module):
                 self.input > filter size it would store the smaller output size and therefore cause an 
                 error as the next layer would be expecting the smaller size
                 """
-                self.layerSizes.append(max(connectionSize, layer["Filter Size"]))
+
+                self.layerSizes[self.architecture.getLayerIndex(layer)] = max(connectionSize, layer["Filter Size"])
                 return generatedlayer
             case "SUM":
                 # Currently not tested
                 # Get the two connected layers so that they can be summed together
-                Layer1 = self.architecture[layer["Connection 1"]]
-                Layer2 = self.architecture[layer["Connection 2"]]
+                layer1 = self.architecture.getConnectedLayer(layer, 1)
+                layer2 = self.architecture.getConnectedLayer(layer, 2)
 
-                generatedLayer = Sum().forward(Layer1, Layer2)
+                generatedLayer = Sum().forward(layer1, layer2)
 
-                self.layerSizes.append(max(self.getConnectionSize(layer["Connection 1"]), self.getConnectionSize(layer["Connection 2"]))) # Same as "RB". get the max so that the right sized output is being used
+                self.layerSizes[self.architecture.getLayerIndex(layer)] = max(connectionSize, self.getConnectionSize(layer["Connection 2"])) # Same as "RB". get the max so that the right sized output is being used
                 return generatedLayer
             case "CON":
                 # Filler. currently not impelemented
-                return None 
+                layer1 = self.architecture.getConnectedLayer(layer, 1)
+                layer2 = self.architecture.getConnectedLayer(layer, 2)
+
+                generatedLayer = Con().forward(layer1, layer2)
+                self.layerSizes[self.architecture.getLayerIndex(layer)] = connectionSize + self.getConnectionSize(layer["Connection 2"])
+                return generatedLayer
+            case "MP" | "AP":
+                generatedLayer = MaxPool(layer["Kernel Size"], layer["Kernel Size"]) if layer["type"] == "MP" else AvgPool(layer["Kernel Size"], layer["Kernel Size"])
+                self.layerSizes[self.architecture.getLayerIndex(layer)] = connectionSize
+                return generatedLayer
             case "OUT":
+                print(self.layerSizes)
                 return LinearBlock(connectionSize, noClasses)
             case "IN":
                 return None # This is just a skip as there is no layer for the input layer

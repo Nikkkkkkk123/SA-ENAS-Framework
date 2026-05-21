@@ -9,6 +9,7 @@ import LayerBlocks
 import torch
 from tqdm import tqdm
 import os
+from torchinfo import summary
 
 class Evolve:
     """ 
@@ -39,15 +40,14 @@ class Evolve:
     """
     def evolve (self):
         self.population = ga.generateArchitectures(self.populationSize, self.maxSize)
-        activeLayers = ac.activeLayers(self.population[0])
-        print(f"Initial Population: {self.population}")
-        print(f"Active Layers: {activeLayers}")
 
         trainSet, testSet, classes = rename.DataLoaders.load_data()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # A test cnn architecture will just be 1 convblock
-        model = LayerBlocks.model(activeLayers, len(classes), self.imageColor)
+        model = LayerBlocks.model(self.population[0], len(classes), self.imageColor)
         model.to(device)
+        summary(model, input_size=(1, 1, 28, 28)) # This is currently hard coded to the test image size. This is just to check that the model is being initialised correctly and that the active layers are being used correctly. This will be removed once actual training is implemented.
+        os._exit(0) # This is just to exit the program after the summary is printed. This will be removed once actual training is implemented.
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         criterion = torch.nn.CrossEntropyLoss()
         out = tqdm(trainSet, desc="Training Progress")
