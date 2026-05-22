@@ -96,10 +96,49 @@ class ArchitectureCodec:
 
         ArchitectureCodec.checkConnection(architecture, outputConnection, connectedLayer, isactiveLayer)
 
-        for layer in range (len(architecture)):
-            if isactiveLayer[layer]:
-                activeArchitecture.append(architecture[layer])
+        activeArchitecture.append(architecture[0])
+        for layerIndex in range (1, len(architecture) - 1):
+            if isactiveLayer[layerIndex]:
+                repairdLayer = ArchitectureCodec._activeLayerRepair(architecture, activeArchitecture,  architecture[layerIndex])
+                activeArchitecture.append(repairdLayer)
+        activeArchitecture.append(ArchitectureCodec._repaireFinalActiveLayer(architecture, activeArchitecture, architecture[len(architecture) - 1]))
         return activeArchitecture
+    
+    def _activeLayerRepair (architecture, activeArch, layer):
+        # Take the indexs from the full architecture encoding and change them in the active architecture layout to match the new input indexs
+        ogCon1Layer = architecture[layer["Connection 1"]]
+        ogCon2Layer = architecture[layer["Connection 2"]]
+        
+        newCon1Index = activeArch.index(ogCon1Layer)
+        
+        # If this is a laytype which only cares about the first connectin then the second may not be active. In this case just store the original
+        try:
+            newCon2Index = activeArch.index(ogCon2Layer)
+        except:
+            newCon2Index = architecture.index(ogCon2Layer)
+
+        repairedLayer = layer
+        repairedLayer["Connection 1"] = newCon1Index
+        repairedLayer["Connection 2"] = newCon2Index
+
+        print(layer)
+        print(repairedLayer)
+
+        return repairedLayer
+    
+    def _repaireFinalActiveLayer (architecture, activeArch, layer):
+
+        ogCon1 = architecture[layer["Connection 1"]]
+
+        newCon1Index = activeArch.index(ogCon1)
+
+        repairdLayer = layer
+
+        repairdLayer["Connection 1"] = newCon1Index
+
+        return repairdLayer
+
+
 
     def checkConnection (architecture, layerIndex, connectedLayer, isactiveLayer):
         # Set the connected layer as active
