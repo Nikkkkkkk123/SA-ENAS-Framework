@@ -31,6 +31,17 @@ class Architecture:
     def getActiveArch(self):
         return self.activeArch
     
+    def getActiveArchLength (self):
+        return len(self.activeArch)
+    
+    def getActiveLayerIndex (self, layer):
+        return self.activeArch.index[layer]
+    
+    def getActiveConnectionIndex (self, layerIndex, connectionNode):
+        if connectionNode == 1:
+            return self.activeArch[layerIndex]["Connection 1"]
+        return self.activeArch[layerIndex]["Connection 2"]
+    
     def getFullArchLength(self):
         return len(self.fullArch)
     
@@ -44,6 +55,12 @@ class Architecture:
             return self.fullArch[layer["Connection 2"]]
         else:
             ValueError("Invalid connection number. Connection number must be 1 or 2.")
+    
+    """
+    Below are setter functions
+    """
+
+    
 
 
     

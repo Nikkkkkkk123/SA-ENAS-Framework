@@ -56,7 +56,7 @@ class GenerateArchitecture:
             # Generate a layer and store it in the architecture array
             generatedarchitecture.append(gl.generateLayer(blockType, i))
         # Generate the output node and connect it to a random node in the architecture that isnt the inputnode or itself
-        generatedarchitecture.append(gl.generateOutputLayer(layerIndex = (length - 2))) # This has to be -2 as it is included currently in the architecture length. So -1 to ensure it cant pick itself and -1 due to having length -1 architecture size at this point
+        generatedarchitecture.append(gl.generateOutputLayer(layerIndex = (length - 1))) # This has to be -2 as it is included currently in the architecture length. So -1 to ensure it cant pick itself and -1 due to having length -1 architecture size at this point
 
         # Creates an architecture object with the generated architecture structure
         architecture = arch(generatedarchitecture) 

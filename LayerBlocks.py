@@ -52,7 +52,7 @@ class ResBlock (nn.Module):
         return x
 
 class MaxPool (nn.Module):
-    def __init__(self, kernel_size, stride):
+    def __init__(self):
         super(MaxPool, self).__init__()
         self.pool = nn.MaxPool2d(2, 2)
 
@@ -88,17 +88,39 @@ class Con (nn.Module):
         super(Con, self).__init__()
 
     def forward(self, input1, input2):
-        # Currently a place hodler and untested
+        # Currently an error if the tensor sizes do not match on other dimensions other than 1.
+        # This can be solved either by padding or pooling.
+        # Since architecture size is a particial objective pooling should be used to reduce computaitonal cost. 
+        # The idea for pooling for me came from "https://github.com/sg-nm/cgp-cnn-PyTorch/blob/master/cnn_model.py#L278" -> this idea adds multiple pooling layers until it gets to the size
+        # However adding this pooling layer would change the architecture encoding. So it should be encoded differently now.
+        # currently not going to change the encoding structure but this should be mentioned
+
+        # If dimenion 2 of the image is different between the 2 inputs then the larger one should be pooled
+        if input1.size(2) > input2.size(2):
+            # you can determine the required filter size by going FilterSize = bigInput - ((small - 1) * stride)
+            # for small = 14 big = 64, stride = 2 it would be:
+            # filtersize = 64 - ((14 - 1) * 2) = 64 - ((13) * 2) = 64 - 26
+            # filtersize = 38
+            # For now just going to do multiple pooling layers
+            # Just doing normal 2 filter and 2 stride just halves the size so can just do this following the git
+            # But if it was the same example as before this could cause an error as 64 does not evenly go into 14 and it would equal in 16 sized dimension
+            numberPools = math.floor(input1.size(2) / input2.size(2))
+            for i in range(numberPools - 1):
+                input1 = MaxPool().forward(input1)
+        elif input1.size(2) < input2.size(2):
+            numberPools = math.floor(input2.size(2) / input1.size(2))
+            for i in range(numberPools - 1):
+                input2 = MaxPool().forward(input2)
+
         output = torch.cat((input1,  input2), dim=1)
         return output
 
 
 class LinearBlock (nn.Module):
-    def __init__(self, in_features, out_features):
+    def __init__(self, in_features, out_features, imageDimension):
         super(LinearBlock, self).__init__()
         self.linear = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(in_features * 28 * 28, out_features)
+            nn.Linear(in_features * imageDimension * imageDimension, out_features)
         ) # This is currently hard coded to the test image size
     def forward(self, x):
         x = self.linear(x)
@@ -122,36 +144,41 @@ class model (nn.Module):
         self.architecture = architecture
         print("Full Architecture", end=" ")
         architecture.print()
+        print(f"Active architectre {architecture.getActiveArch()}")
+        self.currentImageDimension = 28
+
+        self.numberClasses = noClasses
 
         # Due to architecture generation allowing for layers to go to different layers at once, filter sizes need to be stored so they can be obtained as the 8th layer may still take input from the 1st layer
-        self.layerSizes = np.zeros(len(self.architecture.getFullArch())+ 1, dtype=int) # Create array with all 0 values
+        self.layerSizes = np.zeros((architecture.getActiveArchLength())+ 1, dtype=int) # Create array with all 0 values
         self.layerSizes[0] = 1
+        index = 1
 
-        # Loop through each layer (skipping the input layer as it will cause an error)
-        print("Active: ", self.architecture.getActiveArch())
         for layer in architecture.getActiveArch()[1:]:
-            archLayer = self.layerSwitch(layer, noClasses)
+            archLayer = self.layerSwitch(layer, index)
 
             # I like the switch case being used but if it is an input layer it returns none causing an error
             # while the for loop should skip this with [1:], this is just a sanity check to ensure that if it return none it will skip adding it
             if archLayer is not None:
                 self.layers.append(archLayer)
-    
+                index += 1
+            
     """
     Function Name: layerSwitch
     Description: This is a helper function that takes the layer being intialilayer["Kernel Size"]sed and returns the corresponding layer.
     Parameter: 
         layer: The layer in the architecture being initalisaed
-        noClasses: The number of classes that the dataset uses
     Return: 
         generatedLayer: This is the initialised layer the architecture
     """
-    def layerSwitch (self, layer, noClasses):
-        connectionSize = self.getConnectionSize(layer["Connection 1"])
+    def layerSwitch (self, layer, index):
+        connectionSize = self.getConnectionSize(index, 1)
         match layer["type"]:
             case "CB":
                 generatedlayer = ConvBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
-                self.layerSizes[self.architecture.getLayerIndex(layer)] = layer["Filter Size"] # This is to update the input for the next layer
+                self.layerSizes[index] = layer["Filter Size"] # This is to update the input for the next layer
+                newImageDimension= int (((self.currentImageDimension - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
+                self.currentImageDimension = newImageDimension if newImageDimension > 1 else 1
                 return generatedlayer
             case "RB":
                 generatedlayer = ResBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
@@ -162,7 +189,9 @@ class model (nn.Module):
                 error as the next layer would be expecting the smaller size
                 """
 
-                self.layerSizes[self.architecture.getLayerIndex(layer)] = max(connectionSize, layer["Filter Size"])
+                self.layerSizes[index] = max(connectionSize, layer["Filter Size"])
+                newImageDimension= int (((self.currentImageDimension - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
+                self.currentImageDimension = newImageDimension if newImageDimension > 1 else 1
                 return generatedlayer
             case "SUM":
                 # Currently not tested
@@ -172,18 +201,20 @@ class model (nn.Module):
 
                 generatedLayer = Sum()
 
-                self.layerSizes[self.architecture.getLayerIndex(layer)] = max(self.getConnectionSize(layer["Connection 1"]), self.getConnectionSize(layer["Connection 2"])) # Same as "RB". get the max so that the right sized output is being used
+                self.layerSizes[index] = max(connectionSize, self.getConnectionSize(layer["Connection 2"])) # Same as "RB". get the max so that the right sized output is being used
                 return generatedLayer
             case "CON":
                 generatedLayer = Con()
-                self.layerSizes[self.architecture.getLayerIndex(layer)] = connectionSize + self.getConnectionSize(layer["Connection 2"])
+                self.layerSizes[index] = connectionSize + self.getConnectionSize(index, 2)
                 return generatedLayer
             case "MP" | "AP":
-                generatedLayer = MaxPool(layer["Kernel Size"], layer["Kernel Size"]) if layer["type"] == "MP" else AvgPool(layer["Kernel Size"], layer["Kernel Size"])
-                self.layerSizes[self.architecture.getLayerIndex(layer)] = int(connectionSize / 2) if connectionSize > 1 else 1 
+                generatedLayer = MaxPool() if layer["type"] == "MP" else AvgPool(layer["Kernel Size"], layer["Kernel Size"])
+                self.layerSizes[index] = connectionSize
+                newImageDimension = int(((self.currentImageDimension - 2) / 2) + 1)
+                self.currentImageDimension = newImageDimension if newImageDimension > 1 else self.currentImageDimension
                 return generatedLayer
             case "OUT":
-                return LinearBlock(connectionSize, noClasses)
+                return LinearBlock(connectionSize, self.numberClasses, self.currentImageDimension)
             case "IN":
                 return None # This is just a skip as there is no layer for the input layer
             
@@ -195,8 +226,20 @@ class model (nn.Module):
     Return: 
         self.layerSizes[layer]: The output size of the connected layer.
     """
-    def getConnectionSize (self, layer):
-        return int(self.layerSizes[layer])
+    def getConnectionSize (self, layerIndex, connectionNodeID):
+        # This needs to get the connection size of the connected layer
+        connectionNode = self.architecture.getActiveConnectionIndex(layerIndex, connectionNodeID)
+        return int(self.layerSizes[connectionNode])
+    
+    def _getOutputConnection (self, output, layerIndex, connectNodeID):
+        # This will return the output shape from the required input layer
+        # To do this i need to:
+        #   Use the connectedNodeID to know whether it is connection 1 or 2
+        #   use this to get the index from the active layers from the selected connection node
+        #   then this needs to return the output from this index
+        connectionIndex = self.architecture.getActiveConnectionIndex(layerIndex, connectNodeID)
+        return output[connectionIndex]
+        
     
     def main (self, x):
         # Known bug: The for loop assumes linearity but it actually is not so if input layer goes to both resblock and another resblock the second is assuming the input is from the first resblock and not the input layer
@@ -204,22 +247,22 @@ class model (nn.Module):
         output[0] = x
         index = 1
         for layer in self.layers:
+            print(layer)
+            connection1Output = self._getOutputConnection(output, index, 1)
             if isinstance(layer, ConvBlock) | isinstance(layer, ResBlock):
                 # Need to get the connected layers index in the output array so that if one layer outputs to multiple then it is using the correct input size
-                output[index] = layer(output[index - 1])
+                output[index] = layer(connection1Output)
             elif isinstance(layer, LinearBlock):
-                temp = output[index - 1].view(output[index - 1].size(0), -1)
+                temp = connection1Output.view(connection1Output.size(0), -1)
                 output[index] = layer(temp)
             elif isinstance(layer, Con) | isinstance(layer, Sum):
-                input1 = output[self.layers.index(layer) - 1] 
-                input2 = output[self.layers.index(layer) - 1] 
-                output[index] = layer(input1, input2)
+                connection2Output = self._getOutputConnection(output, index, 2)
+                output[index] = layer(connection1Output, connection2Output)
             elif isinstance(layer, MaxPool) | isinstance(layer, AvgPool):
-                temp = layer(output[index - 1])
-                if output[index - 1].size(1) > 1:
-                    output[index] = temp
+                if connection1Output.size(2) >= 1:
+                    output[index] = layer(connection1Output)
                 else:
-                    output[index] = output[index - 1]               
+                    output[index] = connection1Output            
             index += 1
         return output[index - 1]
 

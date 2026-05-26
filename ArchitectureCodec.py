@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import copy
 
 class ArchitectureCodec:
     layerType = {
@@ -90,6 +92,7 @@ class ArchitectureCodec:
         # Get the outputlayer connection layer and check it as a active layer
         isactiveLayer[len(architecture) - 1] = True
         activeArchitecture = []
+        alteredLayers = {}
 
         outputConnection = architecture[len(architecture) - 1]["Connection 1"]
         connectedLayer = architecture[outputConnection]
@@ -97,48 +100,55 @@ class ArchitectureCodec:
         ArchitectureCodec.checkConnection(architecture, outputConnection, connectedLayer, isactiveLayer)
 
         activeArchitecture.append(architecture[0])
+        ArchitectureCodec._orignalToAlteredLayer(alteredLayers, 0, 0)
         for layerIndex in range (1, len(architecture) - 1):
             if isactiveLayer[layerIndex]:
-                repairdLayer = ArchitectureCodec._activeLayerRepair(architecture, activeArchitecture,  architecture[layerIndex])
+                repairdLayer = ArchitectureCodec._activeLayerRepair(architecture, alteredLayers, activeArchitecture, layerIndex)
                 activeArchitecture.append(repairdLayer)
-        activeArchitecture.append(ArchitectureCodec._repaireFinalActiveLayer(architecture, activeArchitecture, architecture[len(architecture) - 1]))
+
+                # Use the index of the repaired active layer to store the index of the original unaltered way so that it can be accessed
+                ArchitectureCodec._orignalToAlteredLayer(alteredLayers, layerIndex, (len(activeArchitecture) - 1))
+
+        activeArchitecture.append(ArchitectureCodec._repaireFinalActiveLayer(architecture, alteredLayers, (len(architecture) - 1)))
         return activeArchitecture
     
-    def _activeLayerRepair (architecture, activeArch, layer):
-        # Take the indexs from the full architecture encoding and change them in the active architecture layout to match the new input indexs
-        ogCon1Layer = architecture[layer["Connection 1"]]
-        ogCon2Layer = architecture[layer["Connection 2"]]
+    def _activeLayerRepair (architecture, alteredLayers, activeArch, layerIndex):
+        currLayer = architecture[layerIndex]
         
-        newCon1Index = activeArch.index(ogCon1Layer)
+        # Since the layer connection information changes it wont be able to find it in the activeArch array. So have to get the index from a dictionary
+        # that stores the original layer index with the repaired
+        newCon1Index = ArchitectureCodec._getAlteredLayerIndex(alteredLayers, currLayer["Connection 1"])
         
         # If this is a laytype which only cares about the first connectin then the second may not be active. In this case just store the original
         try:
-            newCon2Index = activeArch.index(ogCon2Layer)
+            newCon2Index = ArchitectureCodec._getAlteredLayerIndex(alteredLayers, currLayer["Connection 2"])
         except:
-            newCon2Index = architecture.index(ogCon2Layer)
+            newCon2Index =architecture[currLayer["Connection 2"]]
 
-        repairedLayer = layer
+        repairedLayer = copy.copy(currLayer)
         repairedLayer["Connection 1"] = newCon1Index
         repairedLayer["Connection 2"] = newCon2Index
 
-        print(layer)
-        print(repairedLayer)
-
         return repairedLayer
     
-    def _repaireFinalActiveLayer (architecture, activeArch, layer):
+    def _repaireFinalActiveLayer (architecture, alteredLayers, layerIndex):
+        # Since fully connected layers only take 1 input this would have to mean that the last index of the active architectures is its input. Since 
+        # if there is anything defined after it then its either the input or a combination block that would become an input
+        layer = architecture[layerIndex]
+        repairdLayer = copy.copy(layer)
 
-        ogCon1 = architecture[layer["Connection 1"]]
+        connection = layer["Connection 1"]
 
-        newCon1Index = activeArch.index(ogCon1)
+        activeConnection = ArchitectureCodec._getAlteredLayerIndex(alteredLayers, connection)
 
-        repairdLayer = layer
-
-        repairdLayer["Connection 1"] = newCon1Index
-
+        repairdLayer["Connection 1"] = activeConnection
         return repairdLayer
-
-
+    
+    def _orignalToAlteredLayer (alteredLayers, repairedLayerIndex, originalIndex):
+        alteredLayers[repairedLayerIndex] = originalIndex
+    
+    def _getAlteredLayerIndex (alteredLayers, originalIndex):
+        return alteredLayers[originalIndex]
 
     def checkConnection (architecture, layerIndex, connectedLayer, isactiveLayer):
         # Set the connected layer as active
