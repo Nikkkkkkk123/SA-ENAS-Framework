@@ -194,14 +194,9 @@ class model (nn.Module):
                 self.currentImageDimension = newImageDimension if newImageDimension > 1 else 1
                 return generatedlayer
             case "SUM":
-                # Currently not tested
-                # Get the two connected layers so that they can be summed together
-                layer1 = self.layersIndex.get(layer["Connection 1"])
-                layer2 = self.layersIndex.get(layer["Connection 2"])
-
                 generatedLayer = Sum()
 
-                self.layerSizes[index] = max(connectionSize, self.getConnectionSize(layer["Connection 2"])) # Same as "RB". get the max so that the right sized output is being used
+                self.layerSizes[index] = max(connectionSize, self.getConnectionSize(index, 2)) # Same as "RB". get the max so that the right sized output is being used
                 return generatedLayer
             case "CON":
                 generatedLayer = Con()

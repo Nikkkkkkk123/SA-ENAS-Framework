@@ -55,7 +55,6 @@ class GenerateLayers:
     
     @staticmethod
     def generateCombineBlock (type, layerIndex):
-        type = 6
         combineBlock = {
             "type": "CON" if type == 6 else "SUM",
             "Connection 1": random.randint(1, layerIndex), # Stating at 1 to avoid it concatinating with the "input"
@@ -109,6 +108,6 @@ class GenerateLayers:
                 if layerIndex < 3:
                     blockID = random.randint(1, 5) # Currently a magic number
                     return GenerateLayers.generateLayer(blockID, layerIndex) 
-                return GenerateLayers.generateCombineBlock(type=blockID, layerIndex=layerIndex)
+                return GenerateLayers.generateCombineBlock(blockID, layerIndex)
             case 8:
                 return GenerateLayers.generateOutputLayer(layerIndex)
