@@ -11,7 +11,7 @@ class ArchitectureCodec:
         "BND": 5,
         "CON": 6,
         "SUM": 7,
-        "OUT": 8
+        "LIN": 8
     }
 
     layerToIndex = {
@@ -22,7 +22,7 @@ class ArchitectureCodec:
         5: "BND",
         6: "CON",
         7: "SUM",
-        8: "OUT"
+        8: "LIN"
     }
 
     kernelSize = [0, 3, 5, 7, 9, 11, 13, 15, 17, 19]
@@ -80,7 +80,7 @@ class ArchitectureCodec:
                 }
             except IndexError:
                 # Just a sanity check incease it does get to this error and it is not an output layer
-                if layerType != 'OUT':
+                if layerType != 'LIN':
                     print("Error: Invalid layer type in encoded architecture")
                     continue
 

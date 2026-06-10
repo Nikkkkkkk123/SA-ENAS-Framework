@@ -79,7 +79,7 @@ class GenerateLayers:
     @staticmethod
     def generateOutputLayer (layerIndex):
         outputLayer = {
-            "type": "OUT",
+            "type": "LIN",
             "Connection 1": random.randint(1, layerIndex), # Currently enforcing not picking the input layer. At the moment this is a test input but may become rule
         }
 
