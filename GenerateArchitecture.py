@@ -34,7 +34,6 @@ class GenerateArchitecture:
                 while GenerateArchitecture.checkDuplicates(generatedArchitecture, architectures):
                     generatedArchitecture = GenerateArchitecture.generateArchitecture(length)
             architectures.append(generatedArchitecture)
-        os._exit(0)
         return architectures
     
     """

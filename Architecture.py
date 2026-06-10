@@ -60,6 +60,8 @@ class Architecture:
     """
     Below are setter functions
     """
+    def setFitness(self, fitness):
+        self.performance = fitness
 
     
 

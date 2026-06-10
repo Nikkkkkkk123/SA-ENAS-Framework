@@ -25,7 +25,7 @@ class ArchitectureCodec:
         8: "OUT"
     }
 
-    kernalSize = [0, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+    kernelSize = [0, 3, 5, 7, 9, 11, 13, 15, 17, 19]
     filterSize = [0, 8, 16, 32, 64, 128, 256, 512]
 
     def encode (architecture):
@@ -37,15 +37,15 @@ class ArchitectureCodec:
             encodedType = ArchitectureCodec.layerType[layer["type"]]
 
             """
-                Have to try to encode the filter size and kernal size as the output layer does not include these in the parameters
+                Have to try to encode the filter size and kernel size as the output layer does not include these in the parameters
                 This is included with the encoding formation of layer = [Function type | Connection 1 | Connection 2 | Filter Size | Kernel Size]
                 For the architecture encoding it follows [Layer 1 | Layer 2 | ... | Layer n] where n is the output layer following the encoding of 
                 Output = [Function type | connection 1]
             """
             try:
                 encodedFilterSize = ArchitectureCodec.filterSize.index(layer["Filter Size"])
-                encodedKernalSize = ArchitectureCodec.kernalSize.index(layer["Kernal Size"])
-                encodedLayer = [encodedType, layer["Connection 1"], layer["Connection 2"], encodedFilterSize, encodedKernalSize]
+                encodedKernelSize = ArchitectureCodec.kernelSize.index(layer["Kernel Size"])
+                encodedLayer = [encodedType, layer["Connection 1"], layer["Connection 2"], encodedFilterSize, encodedKernelSize]
             except KeyError:
                 encodedLayer = [encodedType, layer["Connection 1"]]
             
@@ -53,6 +53,11 @@ class ArchitectureCodec:
         
         # Flatten the encoded architecture to a 1D array for input into the surrogate model
         encodedArch = [layer for sublist in encodedArch for layer in sublist]
+        print("Full Architecture: ", end=" ")
+        for layer in architecture:
+            print(layer, end=" ")
+        print("\nEncoded Architecture: ", encodedArch)
+        os._exit(0)
         
         return encodedArch
     
@@ -60,18 +65,18 @@ class ArchitectureCodec:
         decodedArch = []
         for block in range (0, len(encodedArch), 5):
             layerType = ArchitectureCodec.layerToIndex[encodedArch[block]]
-            # Try loop is here for when it gets to the output layer which does not have kernal and filter size parameters
+            # Try loop is here for when it gets to the output layer which does not have kernel and filter size parameters
             # This should only occur when it is the output layer
             try:
                 filerSize = ArchitectureCodec.filterSize[encodedArch[block + 3]]
-                kernalSize = ArchitectureCodec.kernalSize[encodedArch[block + 4]]
+                kernelSize = ArchitectureCodec.kernelSize[encodedArch[block + 4]]
 
                 decodedLayer = {
                     "type": layerType,
                     "Connection 1": encodedArch[block + 1],
                     "Connection 2": encodedArch[block + 2],
                     "Filter Size": filerSize,
-                    "Kernal Size": kernalSize
+                    "Kernel Size": kernelSize
                 }
             except IndexError:
                 # Just a sanity check incease it does get to this error and it is not an output layer
