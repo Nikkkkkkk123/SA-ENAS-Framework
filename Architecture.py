@@ -15,6 +15,7 @@ class Architecture:
         self.encodedArch = ac.encode(architecture)
         self.activeArch = ac.activeLayers(architecture)
         self.performance = 0 # Currently placeholder
+        self.manuallyEvaluated = False # Boolean to check if the architecture has been manually evaluated. 
 
     def print (self):
         print(self.fullArch)
