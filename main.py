@@ -15,6 +15,8 @@ if __name__ == "__main__":
     parser.add_argument("--generations", type=int, default=10, help="The number of generations to evolve.")
     parser.add_argument("--architecture_length", type=int, default=10, help="The number of layers in each architecture.")
     parser.add_argument("--image_color", type=int, default=1, help="The number of color channels in the input images.")
+    parser.add_argument("--crossover_rate", type=float, default=0.5, help="The probability of crossover between two parent architectures.")
+    parser.add_argument("--mutation_rate", type=float, default=0.1, help="The probability of mutation for each architecture.")
 
     args = parser.parse_args()
 

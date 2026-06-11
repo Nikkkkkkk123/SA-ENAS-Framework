@@ -2,7 +2,7 @@ import random
 
 class GenerateLayers:
     
-    kernalSize = [3, 5, 7, 9, 11, 13, 15, 17, 19]
+    kernelSize = [3, 5, 7, 9, 11, 13, 15, 17, 19]
     filterSize = [8, 16, 32, 64, 128, 256, 512]
 
     @staticmethod
@@ -12,7 +12,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": 0,
-            "Kernel Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernelSize)
         }
 
         return poolLayer
@@ -24,7 +24,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": random.choice(GenerateLayers.filterSize),
-            "Kernel Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernelSize)
         }
 
         return convLayer
@@ -36,7 +36,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": random.choice(GenerateLayers.filterSize),
-            "Kernel Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernelSize)
         }
 
         return resBlock
@@ -48,7 +48,7 @@ class GenerateLayers:
             "Connection 1": random.randint(0, layerIndex),
             "Connection 2": random.randint(0, layerIndex),
             "Filter Size": random.choice(GenerateLayers.filterSize),
-            "Kernel Size": random.choice(GenerateLayers.kernalSize)
+            "Kernel Size": random.choice(GenerateLayers.kernelSize)
         }
 
         return bottleNeckDepthWise

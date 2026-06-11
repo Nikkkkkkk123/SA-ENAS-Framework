@@ -53,11 +53,6 @@ class ArchitectureCodec:
         
         # Flatten the encoded architecture to a 1D array for input into the surrogate model
         encodedArch = [layer for sublist in encodedArch for layer in sublist]
-        print("Full Architecture: ", end=" ")
-        for layer in architecture:
-            print(layer, end=" ")
-        print("\nEncoded Architecture: ", encodedArch)
-        os._exit(0)
         
         return encodedArch
     

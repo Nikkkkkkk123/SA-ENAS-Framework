@@ -5,6 +5,7 @@ Description: This file is the main evolutionary file containing the main loop.
 import rename
 from GenerateArchitecture import GenerateArchitecture as ga
 from ArchitectureCodec import ArchitectureCodec as ac
+from Architecture import Architecture as arch
 import LayerBlocks
 import torch
 from tqdm import tqdm
@@ -71,12 +72,14 @@ class Evolve:
                 print("Parent 1: ", parent1.getFullArch())
                 print("\nParent 2: ", parent2.getFullArch())
                 print("\nChild: ", childArch)
+                childArch = arch(childArch)
+                print("\nEncoded Child: ", childArch.getActiveArch())
                 os._exit(0)
 
         # model.to(device)
         # summary(model, input_size=(1, 1, 28, 28)) # This is currently hard coded to the test image size. This is just to check that the model is being initialised correctly and that the active layers are being used correctly. This will be removed once actual training is implemented.
         # os._exit(0) # This is just to exit the program after the summary is printed. This will be removed once actual training is implemented.
-        # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        #optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         # criterion = torch.nn.CrossEntropyLoss()
         # out = tqdm(trainSet, desc="Training Progress")
         # totalLoss = 0

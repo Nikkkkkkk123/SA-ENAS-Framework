@@ -121,7 +121,7 @@ class LinearBlock (nn.Module):
         super(LinearBlock, self).__init__()
         self.linear = nn.Sequential(
             nn.Linear(in_features * imageDimension * imageDimension, out_features)
-        ) # This is currently hard coded to the test image size
+        ) 
     def forward(self, x):
         x = self.linear(x)
         return x
@@ -142,9 +142,9 @@ class model (nn.Module):
         self.layers = nn.ModuleList()
 
         self.architecture = architecture
-        print("Full Architecture", end=" ")
-        architecture.print()
-        print(f"Active architectre {architecture.getActiveArch()}")
+        # print("Full Architecture", end=" ")
+        # architecture.print()
+        # print(f"Active architectre {architecture.getActiveArch()}")
         self.currentImageDimension = 28
 
         self.numberClasses = noClasses
@@ -208,7 +208,7 @@ class model (nn.Module):
                 newImageDimension = int(((self.currentImageDimension - 2) / 2) + 1)
                 self.currentImageDimension = newImageDimension if newImageDimension > 1 else self.currentImageDimension
                 return generatedLayer
-            case "OUT":
+            case "LIN":
                 return LinearBlock(connectionSize, self.numberClasses, self.currentImageDimension)
             case "IN":
                 return None # This is just a skip as there is no layer for the input layer
@@ -237,7 +237,6 @@ class model (nn.Module):
         
     
     def main (self, x):
-        # Known bug: The for loop assumes linearity but it actually is not so if input layer goes to both resblock and another resblock the second is assuming the input is from the first resblock and not the input layer
         output = [None] * (len(self.layers)+1)
         output[0] = x
         index = 1
