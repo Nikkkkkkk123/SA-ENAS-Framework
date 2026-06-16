@@ -5,7 +5,7 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-
+from ArchitectureCodec import ArchitectureCodec as ac
 from GenerateLayers import GenerateLayers as gl
 from Architecture import Architecture as arch
 import os
@@ -29,27 +29,13 @@ class GenerateArchitecture:
 
         for i in range (noArchs):
             generatedArchitecture = GenerateArchitecture.generateArchitecture(length)
-            if GenerateArchitecture.checkDuplicates(generatedArchitecture, architectures):
+            if ac.checkDuplicates(generatedArchitecture, architectures):
                 print("Duplicate architecture found. Generating a new architecture.")
-                while GenerateArchitecture.checkDuplicates(generatedArchitecture, architectures):
+                while ac.checkDuplicates(generatedArchitecture, architectures):
                     generatedArchitecture = GenerateArchitecture.generateArchitecture(length)
             architectures.append(generatedArchitecture)
         return architectures
-    
-    """
-    Function Name: checkDuplicates
-    Description: This is a function to check if the generated architecture is a duplicate of any that already exist in the population.
-    Parameter:
-        newArch: The architecture to check for duplicates
-        architectures: The list of existing architectures to check against
-    Return:
-        boolean: True if a duplicate was found, otherwise it will return false.
-    """
-    def checkDuplicates (newArch, architectures):
-        for arch in architectures:
-            if newArch.getActiveArch() == arch.getActiveArch():
-                return True
-        return False
+
     """
     Function Name: generateArchitecture
     Description: This function generates a single architecture of the required length and then returns it

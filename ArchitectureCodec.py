@@ -162,3 +162,18 @@ class ArchitectureCodec:
             if connectedLayer["type"] == 'CON' or connectedLayer["type"] == 'SUM':
                 connectedNode2 = connectedLayer["Connection 2"]
                 ArchitectureCodec.checkConnection(architecture, connectedNode2, architecture[connectedNode2], isactiveLayer)
+    
+    """
+    Function Name: checkDuplicates
+    Description: This is a function to check if the generated architecture is a duplicate of any that already exist in the population.
+    Parameter:
+        newArch: The architecture to check for duplicates
+        architectures: The list of existing architectures to check against
+    Return:
+        boolean: True if a duplicate was found, otherwise it will return false.
+    """
+    def checkDuplicates (newArch, architectures):
+        for arch in architectures:
+            if newArch.getActiveArch() == arch.getActiveArch():
+                return True
+        return False

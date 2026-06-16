@@ -20,5 +20,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    evolution = ev(args.population_size, args.generations, args.architecture_length, args.image_color)
+    evolution = ev(args.population_size, args.generations, args.architecture_length, args.image_color, args.crossover_rate)
     evolution.evolve()
