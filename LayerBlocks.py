@@ -80,6 +80,11 @@ class Sum (nn.Module):
                 input1 = nn.functional.pad(input1, (0, 0, 0, 0, 0, input2.shape[1] - input1.shape[1]))
             else:
                 input2 = nn.functional.pad(input2, (0, 0, 0, 0, 0, input1.shape[1] - input2.shape[1]))
+        elif input1.shape[2] != input2.shape[2]:
+            if input1.shape[2] < input2.shape[2]:
+                input1 = nn.functional.pad(input1, (0, 0, 0, input2.shape[2] - input1.shape[2], 0, 0))
+            else:
+                input2 = nn.functional.pad(input2, (0, 0, 0, input1.shape[2] - input2.shape[2], 0, 0))
         output = torch.add(input1, input2)
         return output
 
@@ -173,6 +178,7 @@ class model (nn.Module):
     """
     def layerSwitch (self, layer, index):
         connectionSize = self.getConnectionSize(index, 1)
+        done = False
         match layer["type"]:
             case "CB":
                 generatedlayer = ConvBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])

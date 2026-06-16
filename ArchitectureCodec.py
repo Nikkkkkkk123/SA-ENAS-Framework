@@ -123,7 +123,7 @@ class ArchitectureCodec:
         try:
             newCon2Index = ArchitectureCodec._getAlteredLayerIndex(alteredLayers, currLayer["Connection 2"])
         except:
-            newCon2Index =architecture[currLayer["Connection 2"]]
+            newCon2Index = currLayer["Connection 2"]
 
         repairedLayer = copy.copy(currLayer)
         repairedLayer["Connection 1"] = newCon1Index
