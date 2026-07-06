@@ -74,17 +74,35 @@ class Sum (nn.Module):
         super(Sum, self).__init__()
 
     def forward(self, input1, input2):
-        
+
+        '''
+        If there are differnet dimension sizes then they need to be modified so that they are the same.
+        If the number of channels if different you can either:
+            - Pad the smaller one with zeros
+            - 1x1 conv to change the number of channels to match
+
+        if the height / width are different then you can either:
+            - pad the smaller dimension with zeros
+            - or use pooling to reduce the larger dimension to match the smaller
+        '''
         if input1.shape[1] != input2.shape[1]:
             if input1.shape[1] < input2.shape[1]:
-                input1 = nn.functional.pad(input1, (0, 0, 0, 0, 0, input2.shape[1] - input1.shape[1]))
+                input1 = nn.Conv2d(input1.shape[1], input2.shape[1], kernel_size=1)(input1)
             else:
-                input2 = nn.functional.pad(input2, (0, 0, 0, 0, 0, input1.shape[1] - input2.shape[1]))
-        elif input1.shape[2] != input2.shape[2]:
+                input2 = nn.Conv2d(input2.shape[1], input1.shape[1], kernel_size=1)(input2)
+
+        # To determine the number of pooling layers required if the dimensions are different,
+        # the formula for number of devisions is utilised
+        # No Pooling = log2 (larger dimension / smaller dimension)
+        if input1.shape[2] != input2.shape[2]:
             if input1.shape[2] < input2.shape[2]:
-                input1 = nn.functional.pad(input1, (0, 0, 0, input2.shape[2] - input1.shape[2], 0, 0))
+                noPools = math.floor(math.log2(input2.shape[2] / input1.shape[2]))
+                for i in range(noPools):
+                    input2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)(input2)
             else:
-                input2 = nn.functional.pad(input2, (0, 0, 0, input1.shape[2] - input2.shape[2], 0, 0))
+                noPools = math.floor(math.log2(input1.shape[2] / input2.shape[2]))
+                for i in range(noPools):
+                    input1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)(input1)
         output = torch.add(input1, input2)
         return output
 
@@ -101,6 +119,8 @@ class Con (nn.Module):
         # currently not going to change the encoding structure but this should be mentioned
 
         # If dimenion 2 of the image is different between the 2 inputs then the larger one should be pooled
+        print("Input 1 shape", input1.shape)
+        print("Input 2 shape", input2.shape)
         if input1.size(2) > input2.size(2):
             # you can determine the required filter size by going FilterSize = bigInput - ((small - 1) * stride)
             # for small = 14 big = 64, stride = 2 it would be:
@@ -109,13 +129,15 @@ class Con (nn.Module):
             # For now just going to do multiple pooling layers
             # Just doing normal 2 filter and 2 stride just halves the size so can just do this following the git
             # But if it was the same example as before this could cause an error as 64 does not evenly go into 14 and it would equal in 16 sized dimension
-            numberPools = math.floor(input1.size(2) / input2.size(2))
-            for i in range(numberPools - 1):
-                input1 = MaxPool().forward(input1)
+            numberPools = math.floor(math.log2(input1.size(2) / input2.size(2)))
+            print("Number of pools", numberPools)
+            for i in range(numberPools):
+                input1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)(input1)
         elif input1.size(2) < input2.size(2):
-            numberPools = math.floor(input2.size(2) / input1.size(2))
-            for i in range(numberPools - 1):
-                input2 = MaxPool().forward(input2)
+            numberPools = math.floor(math.log2(input2.size(2) / input1.size(2)))
+            print("Number of pools", numberPools)
+            for i in range(numberPools):
+                input2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)(input2)
 
         output = torch.cat((input1,  input2), dim=1)
         return output
@@ -150,7 +172,6 @@ class model (nn.Module):
         # print("Full Architecture", end=" ")
         # architecture.print()
         # print(f"Active architectre {architecture.getActiveArch()}")
-        self.currentImageDimension = 28
 
         self.numberClasses = noClasses
 
@@ -158,6 +179,8 @@ class model (nn.Module):
         self.layerSizes = np.zeros((architecture.getActiveArchLength())+ 1, dtype=int) # Create array with all 0 values
         self.layerSizes[0] = 1
         index = 1
+        self.imageDimensions = np.zeros((architecture.getActiveArchLength())+ 1, dtype=int) 
+        self.imageDimensions[0] = 28 # currently the width and height of the input image is hard coded and needs to be changed
 
         for layer in architecture.getActiveArch()[1:]:
             archLayer = self.layerSwitch(layer, index)
@@ -178,13 +201,13 @@ class model (nn.Module):
     """
     def layerSwitch (self, layer, index):
         connectionSize = self.getConnectionSize(index, 1)
-        done = False
         match layer["type"]:
             case "CB":
                 generatedlayer = ConvBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
                 self.layerSizes[index] = layer["Filter Size"] # This is to update the input for the next layer
-                newImageDimension= int (((self.currentImageDimension - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
-                self.currentImageDimension = newImageDimension if newImageDimension > 1 else 1
+                newImageDimension = int (((self.imageDimensions[layer["Connection 1"]] - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
+                print("New Image Dimension", newImageDimension)
+                self.imageDimensions[index] = newImageDimension if newImageDimension > 1 else 1
                 return generatedlayer
             case "RB":
                 generatedlayer = ResBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
@@ -196,26 +219,33 @@ class model (nn.Module):
                 """
 
                 self.layerSizes[index] = max(connectionSize, layer["Filter Size"])
-                newImageDimension= int (((self.currentImageDimension - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
-                self.currentImageDimension = newImageDimension if newImageDimension > 1 else 1
+                newImageDimension = int (((self.imageDimensions[layer["Connection 1"]] - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
+                print("New Image Dimension", newImageDimension)
+                self.imageDimensions[index] = newImageDimension if newImageDimension > 1 else 1
                 return generatedlayer
             case "SUM":
                 generatedLayer = Sum()
 
                 self.layerSizes[index] = max(connectionSize, self.getConnectionSize(index, 2)) # Same as "RB". get the max so that the right sized output is being used
+                self.imageDimensions[index] = min(self.imageDimensions[layer["Connection 1"]], self.imageDimensions[layer["Connection 2"]])                 
+                print("New Image Dimension", self.imageDimensions[index])
                 return generatedLayer
             case "CON":
                 generatedLayer = Con()
                 self.layerSizes[index] = connectionSize + self.getConnectionSize(index, 2)
+                self.imageDimensions[index] = min(self.imageDimensions[layer["Connection 1"]], self.imageDimensions[layer["Connection 2"]])
+                print("New Image Dimension", self.imageDimensions[index])
                 return generatedLayer
             case "MP" | "AP":
                 generatedLayer = MaxPool() if layer["type"] == "MP" else AvgPool(layer["Kernel Size"], layer["Kernel Size"])
                 self.layerSizes[index] = connectionSize
-                newImageDimension = int(((self.currentImageDimension - 2) / 2) + 1)
-                self.currentImageDimension = newImageDimension if newImageDimension > 1 else self.currentImageDimension
+                newImageDimension = int(((self.imageDimensions[layer["Connection 1"]] - 2) / 2) + 1)
+                print("New Image Dimension", newImageDimension)
+                self.imageDimensions[index] = newImageDimension if newImageDimension > 1 else self.imageDimensions[layer["Connection 1"]] 
                 return generatedLayer
             case "LIN":
-                return LinearBlock(connectionSize, self.numberClasses, self.currentImageDimension)
+                print("Input image dimension", self.imageDimensions[layer["Connection 1"]])
+                return LinearBlock(connectionSize, self.numberClasses, self.imageDimensions[layer["Connection 1"]])
             case "IN":
                 return None # This is just a skip as there is no layer for the input layer
             
