@@ -65,10 +65,3 @@ class Architecture:
     """
     def setFitness(self, fitness):
         self.fitness = fitness
-
-
-    
-
-
-    
-

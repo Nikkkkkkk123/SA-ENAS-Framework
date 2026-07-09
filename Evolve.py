@@ -6,6 +6,7 @@ Description: This file is the main evolutionary file containing the main loop.
 from GenerateArchitecture import GenerateArchitecture as ga
 from ArchitectureCodec import ArchitectureCodec as ac
 from Architecture import Architecture as arch
+from GaOperands import GaOperands as gaOperands
 import LayerBlocks
 import copy
 import numpy as np
@@ -29,14 +30,14 @@ class Evolve:
     Return: 
         None
     """
-    def __init__(self, populationSize, generations, maxSize, imageColor, crossOverRate):
+    def __init__(self, populationSize, generations, maxSize, imageColor, crossOverRate, mutationRate):
         self.populationSize = populationSize
         self.generations = generations
         self.maxSize = maxSize # This is the max length that an architecture can be
         self.imageColor = imageColor # The number of color channels in the input images
         self.population = [] # The current plan is for this to contain the active population with another being used for all manually trained to avoid training two identical architectures
         self.currentGeneration = []
-        self.crossOverRate = crossOverRate
+        self.gaOps = gaOperands(crossOverRate, mutationRate)
     
     """
     Function Name: evolve
@@ -67,7 +68,6 @@ class Evolve:
             
             for candidate in self.currentGeneration:
                 candidate.setFitness(random.randint(0, 100))
-                print(candidate.getFullArch()) 
                 model = LayerBlocks.model(candidate, 9, self.imageColor)
                 #summary(model, input_size=(1, 1, 28, 28))
                 self.population.append(candidate)
@@ -103,7 +103,7 @@ class Evolve:
         offspring1: The first offspring architecture
         offspring2: The second offspring architecture
     """
-    def crossover (self, parent1, parent2):
+    def UniformCrossover (self, parent1, parent2):
         # Check if crossover is performed based on the crossover rate. If not than just return the parents as offspring
         if random.random() < self.crossOverRate:
             # Currently there is no determined selection criteria performed before this so parent 1 is the better "fitness" architecture. May potenitally allow for parent 1 to be the same as parent 2 but this is currently just testing
@@ -123,28 +123,11 @@ class Evolve:
             # Turn the generated offsprings into architecture objects, then check if they are duplicates
             offspring1 = arch(offspring1)
             offspring2 = arch(offspring2)
-
-            if ac.checkDuplicates(offspring1, self.population) or ac.checkDuplicates(offspring2, self.population):
-                del offspring1, offspring2
-                print("Duplicate offspring found. Performing crossover again.")
-                return None, None
             
             return offspring1, offspring2
         else:
             return parent1, parent2
-    
-    def mutation (self, architecture):
-        """
-            Mutation that may be performed on the architecture:
-                - Add a layer (If maximum size has not been reached)
-                - Remove a layer (if minimum size has not been reached)
-                - Alter a layer (Currently im unsure if layers are treated as a single gene like layer type, connection, parameter or if check the layer as a whole and then decide what mutation occurs)
-                - Layer alterations include:
-                    - Change layer type
-                    - change connections to the layer
-                    - change the layer parameter
-        """
-        return architecture
+
     
     def selection (self):
         """
@@ -175,20 +158,11 @@ class Evolve:
             del selectionPopulation
 
             # perform crossover on the selected candidates and then store them (Currently not implemented, just generating the new offspring)
-            offspring1, offspring2 = self.crossover(candidate1, candidate2)
-            if offspring1 is None or offspring2 is None:
-                counter = 0
-                print("Crossover failed. Performing crossover again.")
-                while offspring1 is None or offspring2 is None:
-                    counter += 1
-                    offspring1, offspring2 = self.crossover(candidate1, candidate2)
+            offspring1, offspring2 = self.gaOps.crossover(candidate1, candidate2)
 
-                    if offspring1 is not None and offspring2 is not None:
-                        break
-                    elif counter == 100:
-                        offspring1 = candidate1
-                        offspring2 = candidate2
-                        break
+            offspring1, offspring2 = self.gaOps.mutation(offspring1), self.gaOps.mutation(offspring2)
+
+            # duplicates should be checked for after mutating
 
             newPopulation.append(offspring1)
             newPopulation.append(offspring2)
