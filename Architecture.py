@@ -14,7 +14,7 @@ class Architecture:
         self.fullArch = architecture
         self.encodedArch = ac.encode(architecture)
         self.activeArch = ac.activeLayers(architecture)
-        self.performance = 0 # Currently placeholder
+        self.fitness = 0 # Currently placeholder
         self.manuallyEvaluated = False # Boolean to check if the architecture has been manually evaluated. 
 
     def print (self):
@@ -57,11 +57,15 @@ class Architecture:
         else:
             ValueError("Invalid connection number. Connection number must be 1 or 2.")
     
+    def getFitness(self):
+        return self.fitness
+    
     """
     Below are setter functions
     """
     def setFitness(self, fitness):
-        self.performance = fitness
+        self.fitness = fitness
+
 
     
 
