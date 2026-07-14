@@ -2,7 +2,7 @@ import zlib
 import os
 import pefile
 
-location = "/home/nikk/Downloads/0000029bfead495a003e43a7ab8406c6209ffb7d5e59dd212607aa358bfd66ea"
+location = ""
 with open(location, "rb") as f:
     data = f.read()
 decompressed_data = zlib.decompress(data)
