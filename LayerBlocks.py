@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import os
 import math
+from Node import Node
 
 # Taken from https://github.com/sg-nm/cgp-cnn-PyTorch/blob/master/cnn_model.py
 class ConvBlock(nn.Module):
@@ -143,6 +144,8 @@ class LinearBlock (nn.Module):
     def __init__(self, in_features, out_features, imageDimension):
         super(LinearBlock, self).__init__()
         self.linear = nn.Sequential(
+            # for some reasin this is adding up wrong?
+            # Image width and height is being calculated incorrectly
             nn.Linear(in_features * imageDimension * imageDimension, out_features)
         ) 
     def forward(self, x):
@@ -172,13 +175,13 @@ class model (nn.Module):
         self.numberClasses = noClasses
 
         # Due to architecture generation allowing for layers to go to different layers at once, filter sizes need to be stored so they can be obtained as the 8th layer may still take input from the 1st layer
-        self.layerSizes = np.zeros((architecture.getActiveArchLength())+ 1, dtype=int) # Create array with all 0 values
+        self.layerSizes = {}
         self.layerSizes[0] = 1
         index = 1
-        self.imageDimensions = np.zeros((architecture.getActiveArchLength())+ 1, dtype=int) 
+        self.imageDimensions = {}
         self.imageDimensions[0] = 28 # currently the width and height of the input image is hard coded and needs to be changed
-
-        for layer in architecture.getActiveArch()[1:]:
+        self.activeArch = list(architecture.getActiveArch())
+        for layer in list(architecture.getActiveArch().values())[1:]:
             archLayer = self.layerSwitch(layer, index)
 
             # I like the switch case being used but if it is an input layer it returns none causing an error
@@ -196,49 +199,34 @@ class model (nn.Module):
         generatedLayer: This is the initialised layer the architecture
     """
     def layerSwitch (self, layer, index):
-        connectionSize = self.getConnectionSize(index, 1)
-        match layer["type"]:
+        connectionSize = layer.getConnectionOutputSize(1)
+        match layer.getNodeType():
             case "CB":
-                generatedlayer = ConvBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
-                self.layerSizes[index] = layer["Filter Size"] # This is to update the input for the next layer
-                newImageDimension = int (((self.imageDimensions[layer["Connection 1"]] - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
-                self.imageDimensions[index] = newImageDimension if newImageDimension > 1 else 1
+                generatedlayer = ConvBlock(layer.getConnectionOutputSize(1), layer.getFilterSize(), layer.getKernelSize())
                 return generatedlayer
             case "RB":
-                generatedlayer = ResBlock(connectionSize, layer["Filter Size"], layer["Kernel Size"])
+                generatedlayer = ResBlock(layer.getConnectionOutputSize(1), layer.getFilterSize(), layer.getKernelSize())
 
                 """
                 ResBlocks have skip connection. Bassically if doing the same as the convblock when
                 self.input > filter size it would store the smaller output size and therefore cause an 
                 error as the next layer would be expecting the smaller size
                 """
-
-                self.layerSizes[index] = max(connectionSize, layer["Filter Size"])
-                newImageDimension = int (((self.imageDimensions[layer["Connection 1"]] - layer["Kernel Size"] + (2 * (layer["Kernel Size"] // 2))) / 1) + 1)
-                self.imageDimensions[index] = newImageDimension if newImageDimension > 1 else 1
                 return generatedlayer
             case "SUM":
-                generatedLayer = Sum()
-
-                self.layerSizes[index] = max(connectionSize, self.getConnectionSize(index, 2)) # Same as "RB". get the max so that the right sized output is being used
-                self.imageDimensions[index] = min(self.imageDimensions[layer["Connection 1"]], self.imageDimensions[layer["Connection 2"]])                 
+                generatedLayer = Sum()                
                 return generatedLayer
             case "CON":
                 generatedLayer = Con()
-                self.layerSizes[index] = connectionSize + self.getConnectionSize(index, 2)
-                self.imageDimensions[index] = min(self.imageDimensions[layer["Connection 1"]], self.imageDimensions[layer["Connection 2"]])
                 return generatedLayer
             case "MP" | "AP":
-                generatedLayer = MaxPool() if layer["type"] == "MP" else AvgPool(layer["Kernel Size"], layer["Kernel Size"])
-                self.layerSizes[index] = connectionSize
-                newImageDimension = int(((self.imageDimensions[layer["Connection 1"]] - 2) / 2) + 1)
-                self.imageDimensions[index] = newImageDimension if newImageDimension > 1 else self.imageDimensions[layer["Connection 1"]] 
+                generatedLayer = MaxPool() if layer.getNodeType() == "MP" else AvgPool(layer.getKernelSize(), layer.getKernelSize())
                 return generatedLayer
             case "LIN":
-                return LinearBlock(connectionSize, self.numberClasses, self.imageDimensions[layer["Connection 1"]])
+                return LinearBlock(layer.getConnectionOutputSize(1), self.numberClasses, layer.getImageDimension())
             case "IN":
                 return None # This is just a skip as there is no layer for the input layer
-            
+
     """
     Function Name: getConnectionSize
     Description: This is a helper function that returns the output size of the specified connected layer.
@@ -247,10 +235,10 @@ class model (nn.Module):
     Return: 
         self.layerSizes[layer]: The output size of the connected layer.
     """
-    def getConnectionSize (self, layerIndex, connectionNodeID):
+    def getConnectionSize (self, layer: Node, connectionNodeID):
         # This needs to get the connection size of the connected layer
-        connectionNode = self.architecture.getActiveConnectionIndex(layerIndex, connectionNodeID)
-        return int(self.layerSizes[connectionNode])
+        connectionNode = layer.getConnection1() if connectionNodeID == 1 else layer.getConnection2()
+        return connectionNode.getLayerSize()
     
     def _getOutputConnection (self, output, layerIndex, connectNodeID):
         # This will return the output shape from the required input layer
@@ -258,33 +246,39 @@ class model (nn.Module):
         #   Use the connectedNodeID to know whether it is connection 1 or 2
         #   use this to get the index from the active layers from the selected connection node
         #   then this needs to return the output from this index
-        connectionIndex = self.architecture.getActiveConnectionIndex(layerIndex, connectNodeID)
-        return output[connectionIndex]
+        if connectNodeID == 1:
+            connectionNode = self.architecture.getNode(layerIndex).getConnection1().getNodeId()
+        else:
+            connectionNode = self.architecture.getNode(layerIndex).getConnection2().getNodeId()
+
+        return output[connectionNode]
         
     
     def main (self, x):
-        output = [None] * (len(self.layers)+1)
+        output = {}
         output[0] = x
         index = 1
+
         for layer in self.layers:
-            print(layer)
-            connection1Output = self._getOutputConnection(output, index, 1)
+            layerIndex = self.activeArch[index]
+            connection1Output = self._getOutputConnection(output, layerIndex, 1)
             if isinstance(layer, ConvBlock) | isinstance(layer, ResBlock):
                 # Need to get the connected layers index in the output array so that if one layer outputs to multiple then it is using the correct input size
-                output[index] = layer(connection1Output)
+                output[layerIndex] = layer(connection1Output)
             elif isinstance(layer, LinearBlock):
                 temp = connection1Output.view(connection1Output.size(0), -1)
-                output[index] = layer(temp)
+                output[layerIndex] = layer(temp)
             elif isinstance(layer, Con) | isinstance(layer, Sum):
-                connection2Output = self._getOutputConnection(output, index, 2)
-                output[index] = layer(connection1Output, connection2Output)
+                layerIndex = self.activeArch[index]
+                connection2Output = self._getOutputConnection(output, layerIndex, 2)
+                output[layerIndex] = layer(connection1Output, connection2Output)
             elif isinstance(layer, MaxPool) | isinstance(layer, AvgPool):
                 if connection1Output.size(2) >= 1:
-                    output[index] = layer(connection1Output)
+                    output[layerIndex] = layer(connection1Output)
                 else:
-                    output[index] = connection1Output            
+                    output[layerIndex] = connection1Output            
             index += 1
-        return output[index - 1]
+        return output[self.activeArch[-1]]
 
     def forward(self, x):
         return self.main(x)

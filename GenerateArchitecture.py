@@ -1,69 +1,119 @@
-# Going to use the paper with the ConvBlock and ResNet block to get the mix of layers and parameters that I want
-# ConvBlock (CB): Conv2D -> BatchNorm -> ReLU
-# Encoding for this would be [CB | Connection 1 | Connection 2 | Filter Size | Kernal Size] (This is due to it using a stride of 1
-# ResBlock (RB): ConvBlock -> Convolution -> BachNorm -> Sum -> ReLu [RB | Connection 1 | Connection 2 | Filter size | kernal Size]
+from Node import Node
+from LayerDefinitions import LayerDefinitions as ld
 import random
-import numpy as np
-import matplotlib.pyplot as plt
-from ArchitectureCodec import ArchitectureCodec as ac
-from GenerateLayers import GenerateLayers as gl
-from Architecture import Architecture as arch
-import os
 
 class GenerateArchitecture:
-   
-    noLayerTypes = 7
-    noParam = 5
 
-    """ 
-    Function Name: generateArchitectures
-    Description: This function loops to generate the requried number of architectures and stores them in an array to be returned
-    Parameter: 
-        noArchs: The number of architectures to generate
-        length: The length of the architecture to generate (including the output layer)
-    Return: 
-        architectures: An array of architectures
-    """
-    def generateArchitectures (noArchs, length):
-        architectures = []
+    def generateLayer (self, architecture: dict[int, Node], nodeId: int, inputChannels: int, imageSize: int) -> Node:
+        newNode: Node = None
 
-        for i in range (noArchs):
-            generatedArchitecture = GenerateArchitecture.generateArchitecture(length)
-            if ac.checkDuplicates(generatedArchitecture, architectures):
-                print("Duplicate architecture found. Generating a new architecture.")
-                while ac.checkDuplicates(generatedArchitecture, architectures):
-                    generatedArchitecture = GenerateArchitecture.generateArchitecture(length)
-            architectures.append(generatedArchitecture)
-        return architectures
+        if nodeId == 0:
+            return GenerateArchitecture.generateInputLayer(nodeId, 0, inputChannels, imageSize)
 
-    """
-    Function Name: generateArchitecture
-    Description: This function generates a single architecture of the required length and then returns it
-    Parameter:
-        length: The length of the architecture to generate (including the output layer)
-    Return:
-        architecture: an array of layers for a single full architecture
-    """
-    def generateArchitecture (length):
-        generatedarchitecture = []
+        while newNode is None:
+            layerType = ld.selectNewLayerType()
 
-        # Currently implemented as a safe guard for finding active layers
-        inputLayer = {
-            "type": "IN",
-        }
-        generatedarchitecture.append(inputLayer)
-        # Loop through the number of layers to generate the required amount to have a full size architecture
-        for i in range (length - 1):
-            # Select a random block type to generate
-            # The int is converted to a block type in the generateLayer function
-            blockType = random.randint(1, GenerateArchitecture.noLayerTypes)
+            connection1 = architecture[random.randint(0, nodeId - 1)]
+            connection2 = architecture[random.randint(0, nodeId - 1)]
 
-            # Generate a layer and store it in the architecture array
-            generatedarchitecture.append(gl.generateLayer(blockType, i))
-        # Generate the output node and connect it to a random node in the architecture that isnt the inputnode or itself
-        generatedarchitecture.append(gl.generateOutputLayer(layerIndex = (length - 1))) # This has to be -2 as it is included currently in the architecture length. So -1 to ensure it cant pick itself and -1 due to having length -1 architecture size at this point
+            filterSize = ld.selectFilterSize(layerType)
+            kernelSize = ld.selectKernelSize(layerType)
 
-        # Creates an architecture object with the generated architecture structure
-        architecture = arch(generatedarchitecture) 
+            # The new image dimension, and layer size
+            newNode = Node(nodeId, layerType, connection1, connection2, filterSize, kernelSize, inputChannels, imageSize)
 
-        return architecture
+            # This is needed to ensure its not just straight pooling to where dimensions become 0
+            if self.layerSwitch(newNode) is False:
+                newNode = None
+        return newNode
+
+    def buildLayer (self, layer: Node) -> bool:
+        if layer.getNodeId() == 0:
+            return GenerateArchitecture.generateInputLayer(layer.getNodeId(), 0, layer.getLayerSize(), layer.getImageDimension())
+
+        if self.layerSwitch(layer) is False:
+            return False
+        return True
+
+    def validateLayer (self, layer: Node) -> bool:
+        if self.layerSwitch(layer) is False:
+            return False
+        return True
+
+    def generateInputLayer (self, nodeId: int, inputChannels: int, imageSize: int) -> Node:
+        return Node(nodeId, "input", None, None, None, None, inputChannels, imageSize)
+
+    def generateOutputLayer (self, architecture: dict[int, Node], nodeId: int) -> Node:
+        connection1Id = random.randint(0, nodeId - 1)
+        connection1 = architecture[connection1Id]
+        newNode = Node(nodeId, "LIN", connection1, None, None, None, None, None)
+        newNode._layerSize = connection1._layerSize
+        newNode._imageDimension = connection1._imageDimension
+        return newNode
+
+    # This is done to calculate the output dimensions of the layers and images to ensure valid layers are being put in and avoid architectures that may just be pooling to image dimensions are 0
+    def layerSwitch (self, layer: Node) -> bool:
+        connectionSize = layer.getConnection1()._layerSize
+        match layer.getNodeType():
+            case "CB":
+                newImageDimension = int (((layer.getConnectionImageDimension(1) - layer.getKernelSize() + (2 * (layer.getKernelSize() // 2))) / 1) + 1)
+
+                if self.imageDimensionCheck(newImageDimension):
+                    layer._layerSize = layer._filterSize
+                    layer._imageDimension = newImageDimension
+                    return True
+                return False
+            case "RB":
+                newImageDimension = int (((layer.getConnectionImageDimension(1) - layer.getKernelSize() + (2 * (layer.getKernelSize() // 2))) / 1) + 1)
+
+                if self.imageDimensionCheck(newImageDimension):
+                    layer._layerSize = max(connectionSize, layer._filterSize)
+                    layer._imageDimension = newImageDimension
+
+                    return True
+                return False
+            case "SUM":
+                newImageDimension = min(layer.getConnectionImageDimension(1), layer.getConnectionImageDimension(2))
+
+                if self.imageDimensionCheck(newImageDimension):
+                    layer._imageDimension = newImageDimension
+                    layer._layerSize = max(connectionSize, layer.getConnectionOutputSize(2))
+
+                    return True
+                return False
+            case "CON":
+                newImageDimension = min(layer.getConnectionImageDimension(1), layer.getConnectionImageDimension(2))
+
+                if self.imageDimensionCheck(newImageDimension):
+                    layer._imageDimension = newImageDimension
+                    layer._layerSize = connectionSize + layer.getConnectionOutputSize(2)
+
+                    return True
+
+                return False
+            case "MP" | "AP":
+                newImageDimension = int(((layer.getConnectionImageDimension(1) - 2) / 2) + 1)
+
+                if self.imageDimensionCheck(newImageDimension):
+                    layer._imageDimension = newImageDimension
+                    layer._layerSize = connectionSize
+
+                    return True
+                return False
+            case "LIN":
+                layer._imageDimension = layer.getConnectionImageDimension(1)
+                layer._layerSize = layer.getConnectionOutputSize(1)
+                return True
+
+    def getConnectionSize (self, layer: Node, connectionNumber: int) -> int:
+        if connectionNumber == 1:
+            return layer.getConnectionOutputSize(1)
+        elif connectionNumber == 2:
+            return layer.getConnectionOutputSize(2)
+        else:
+            raise ValueError("Invalid connection number. Must be 1 or 2.")
+
+    def imageDimensionCheck (self, imageDimension: int) -> bool:
+        if imageDimension < 1:
+            return False
+        return True
