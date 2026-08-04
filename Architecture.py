@@ -12,6 +12,8 @@ class Architecture:
     _imageDimension: dict[int, int]
     _canRemove: bool
     _imageSize: int
+    _fitness: float
+    _noParameters: int
 
     def __init__(self, maxLength: int, inputChannels: int, imageSize: int) -> None:
         self._layerSize = {}
@@ -23,6 +25,8 @@ class Architecture:
         self.maxSize = maxLength
         self.inputChannels = inputChannels
         self._imageSize = imageSize
+        self._fitness = 0
+        self._noParameters = 0
 
     def generateArchitecture (self) -> None:
         newNode: Node = None
@@ -314,3 +318,15 @@ class Architecture:
             print("Active encoding is None, generating active encoding")
             os._exit(0)
         return self._encodeActive
+
+    def getFitness (self) -> float:
+        return self._fitness
+
+    def calculateFitness (self, f1Score: float) -> None:
+        self._fitness =  f1Score - (self._noParameters / 1000000)
+
+    def getNoParameters (self) -> int:
+        return self._noParameters
+
+    def setNoParameters (self, newNoParameters: int) -> None:
+        self._noParameters = newNoParameters

@@ -10,7 +10,6 @@ class Node:
     _kernelSize: int
     _imageDimension: int
     _layerSize: int
-    _fitness: int
 
     def __init__ (self, key: int, nodeType: str, connection1: Node, connection2: Node = None, filterSize: int = None, kernelSize: int = None, layerSize: int = None, imageDimension: int = None) -> None:
         self._nodeId = key
@@ -22,7 +21,6 @@ class Node:
         self._kernelSize = kernelSize
         self._imageDimension = imageDimension
         self._layerSize = layerSize
-        self._fitness = 0
 
     @classmethod
     def createInputNode (cls) -> Node:

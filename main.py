@@ -20,8 +20,9 @@ if __name__ == "__main__":
     parser.add_argument("--min_layers", type=int, default=3, help="The minimum number of layers in each architecture.")
     parser.add_argument("--image_size", type=int, default=32, help="The size of the input images (assumed to be square).")
     parser.add_argument("--batch_size", type=int, default=8, help="The batch size for training.")
+    parser.add_argument("--epochs", type=int, default=5, help="The number of epochs for training each model.")
 
     args = parser.parse_args()
 
-    evolution = ev(args.population_size, args.architecture_length, args.input_channels, args.generations, args.image_size, args.batch_size)
+    evolution = ev(args.population_size, args.architecture_length, args.input_channels, args.generations, args.image_size, args.batch_size, args.epochs, args.mutation_rate)
     evolution.evolve()

@@ -12,14 +12,14 @@ class GA_ops:
         parent1: arch = None
         parent2: arch = None
 
-        selectionPopulation = random.sample(currPopulation, 3)
+        selectionPopulation = random.sample(currPopulation, 3) if len(currPopulation) >= 3 else random.sample(currPopulation, len(currPopulation))
         parent1 = random.choice(selectionPopulation)
         selectionPopulation.remove(parent1)
         parent2 = random.choice(selectionPopulation)
 
         return parent1, parent2
 
-    def crossover (parent1: arch, parent2: arch, maxSize: int, inputChannels: int, imageSize: int) -> tuple[arch, arch]:
+    def crossover (parent1: arch, parent2: arch, maxSize: int, inputChannels: int, imageSize: int, mutationRate: float) -> tuple[arch, arch]:
         offspringArch_1: arch = None
         offspringArch_2: arch = None
 
@@ -34,8 +34,8 @@ class GA_ops:
             offspringArch_2 = arch(maxSize, inputChannels, imageSize)
 
             if offspringArch_1.setArchitecture(offspring1) and offspringArch_2.setArchitecture(offspring2):
-                offspringArch_1 = GA_ops.mutation(offspringArch_1, maxSize)
-                offspringArch_2 = GA_ops.mutation(offspringArch_2, maxSize)
+                offspringArch_1 = GA_ops.mutation(offspringArch_1, maxSize, mutationRate)
+                offspringArch_2 = GA_ops.mutation(offspringArch_2, maxSize, mutationRate)
             else:
                 offspringArch_1 = None
                 offspringArch_2 = None
@@ -44,14 +44,15 @@ class GA_ops:
     """
     Below are functions regarding performing mutation on architectures
     """
-    def mutation (offspring: arch, maxSize: int) -> arch:
+    def mutation (offspring: arch, maxSize: int, mutationRate: float) -> arch:
         mutateType: str = None
         for i in range (1, maxSize):
-            succMutate: bool = False
-
-            while not succMutate:
-                mutationType = random.choice(GA_ops.mutationOptions)
-                succMutate = GA_ops.mutateSwitch(offspring, offspring.getLayer(i), mutationType)
+            mutateChance = random.random()
+            if mutateChance < mutationRate:
+                succMutate: bool = False
+                while not succMutate:
+                    mutationType = random.choice(GA_ops.mutationOptions)
+                    succMutate = GA_ops.mutateSwitch(offspring, offspring.getLayer(i), mutationType)
 
         # Check the mutation is valid
         if offspring.buildArchitecture(offspring._architecture):
