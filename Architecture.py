@@ -1,6 +1,7 @@
 from Node import Node as Node
 from GenerateArchitecture import GenerateArchitecture as genArch
 from LayerDefinitions import LayerDefinitions as ld
+from Encode import Encode as encode
 import os
 import copy
 import random
@@ -21,6 +22,7 @@ class Architecture:
         self._architecture = {}
         self._activeArchitecture = {}
         self._encodeActive = []
+        self._encodedArchitecture = []
 
         self.maxSize = maxLength
         self.inputChannels = inputChannels
@@ -37,6 +39,8 @@ class Architecture:
         finalNode = genArch().generateOutputLayer(self._architecture, self.maxSize)
         self.addNode(finalNode.getNodeId(), finalNode)
         self.getActive()
+        self._activeArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
+
 
     def buildArchitecture (self, newArchitecture: dict[int, Node]) -> bool:
         self._architecture = {}
@@ -63,6 +67,7 @@ class Architecture:
                 return False
             self.addNode(newNode.getNodeId(), newNode)
         self.getActive()
+        self._activeArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
         return True
 
     def getLayerSize (self, layerId: int) -> int:
@@ -128,12 +133,7 @@ class Architecture:
     # But a encoding class will be made which will return the encoded version which then will be stored to avoid duplicates
     def findActiveEncoding (self):
         encoding = []
-        for key in self._activeArchitecture:
-            nodeInformation = self._activeArchitecture[key].getNodeInformation()
-            encoding.append(nodeInformation)
-
-        encoding = [item for sublist in encoding for item in sublist]
-
+        encoding = encode.encode(list(self._activeArchitecture.values()), len(self._activeArchitecture) - 1)
         return encoding
 
     def getActiveArchLength (self) -> int:
