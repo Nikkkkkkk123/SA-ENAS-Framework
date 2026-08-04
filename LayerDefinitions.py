@@ -1,4 +1,5 @@
 import random
+from xml.dom import Node
 from kernelSize import KERNEL_SIZE
 from FilterSize import FILTER_SIZE
 
@@ -71,6 +72,10 @@ class LayerDefinitions:
             return True
         return False
 
+    @classmethod
+    def getLayerIndex (cls, layerType: str) -> int:
+        return LayerDefinitions.INDEXLAYER[layerType]
+
     """
     Helper functions to select kernel and filter sizes for layers
     """
@@ -107,3 +112,18 @@ class LayerDefinitions:
             if kernelSize in KERNEL_SIZE:
                 return True
         return False
+
+    @classmethod
+    def encodeLayer (cls, layer: Node) -> list:
+        layerType = layer.getNodeType()
+        encodedType = LayerDefinitions.getLayerIndex(layerType)
+        if LayerDefinitions.LAYERINDEX[encodedType] == "IN":
+            return None
+        connection1 = layer.getConnection1().getNodeId() if layer.getConnection1() is not None else 0
+        connection2 = layer.getConnection2().getNodeId() if layer.getConnection2() is not None else 0
+        encodedFilterSize = 0 if layer.getFilterSize() is None or layer.getFilterSize() == 0 else list(FILTER_SIZE).index(layer.getFilterSize())
+        encodedKernelSize = 0 if layer.getKernelSize() is None or layer.getKernelSize() == 0 else list(KERNEL_SIZE).index(layer.getKernelSize())
+
+        if LayerDefinitions.LAYERINDEX[encodedType] == "LIN":
+            return [encodedType, connection1]
+        return [encodedType, connection1, connection2, encodedFilterSize, encodedKernelSize]

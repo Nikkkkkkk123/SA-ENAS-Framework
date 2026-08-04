@@ -93,7 +93,7 @@ class Architecture:
 
         node.setActive(True)
         newActiveNode = copy.deepcopy(node)
-        if node.getNodeType() == "input":
+        if node.getNodeType() == ld.getInputLayerStr():
             self._activeArchitecture[node.getNodeId()] = newActiveNode
             return True
         connectionSet.add(node.getNodeId())

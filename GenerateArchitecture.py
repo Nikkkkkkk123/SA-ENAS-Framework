@@ -41,7 +41,7 @@ class GenerateArchitecture:
         return True
 
     def generateInputLayer (self, nodeId: int, inputChannels: int, imageSize: int) -> Node:
-        return Node(nodeId, "input", None, None, None, None, inputChannels, imageSize)
+        return Node(nodeId, "IN", None, None, None, None, inputChannels, imageSize)
 
     def generateOutputLayer (self, architecture: dict[int, Node], nodeId: int) -> Node:
         connection1Id = random.randint(0, nodeId - 1)
