@@ -1,5 +1,5 @@
+from __future__ import annotations
 import os
-
 class Node:
     _nodeId: int
     _nodeType: str

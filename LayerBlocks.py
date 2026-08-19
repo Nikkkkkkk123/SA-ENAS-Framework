@@ -53,9 +53,9 @@ class ResBlock (nn.Module):
         return x
 
 class MaxPool (nn.Module):
-    def __init__(self):
+    def __init__(self, kernel_size):
         super(MaxPool, self).__init__()
-        self.pool = nn.MaxPool2d(2, 2)
+        self.pool = nn.MaxPool2d(kernel_size, 2, padding=(kernel_size // 2))
 
     def forward(self, x):
         x = self.pool(x)
@@ -64,7 +64,7 @@ class MaxPool (nn.Module):
 class AvgPool (nn.Module):
     def __init__(self, kernel_size, stride):
         super(AvgPool, self).__init__()
-        self.pool = nn.AvgPool2d(2, 2)
+        self.pool = nn.AvgPool2d(kernel_size, 2, padding=(kernel_size // 2))
 
     def forward(self, x):
         x = self.pool(x)
@@ -88,9 +88,9 @@ class Sum (nn.Module):
         '''
         if input1.shape[1] != input2.shape[1]:
             if input1.shape[1] < input2.shape[1]:
-                input1 = nn.Conv2d(input1.shape[1], input2.shape[1], kernel_size=1)(input1)
+                input1 = nn.Conv2d(input1.shape[1], input2.shape[1], kernel_size=1).to(input1.device)(input1)
             else:
-                input2 = nn.Conv2d(input2.shape[1], input1.shape[1], kernel_size=1)(input2)
+                input2 = nn.Conv2d(input2.shape[1], input1.shape[1], kernel_size=1).to(input2.device)(input2)
 
         # To determine the number of pooling layers required if the dimensions are different,
         # the formula for number of devisions is utilised
@@ -220,7 +220,7 @@ class model (nn.Module):
                 generatedLayer = Con()
                 return generatedLayer
             case "MP" | "AP":
-                generatedLayer = MaxPool() if layer.getNodeType() == "MP" else AvgPool(layer.getKernelSize(), layer.getKernelSize())
+                generatedLayer = MaxPool(layer.getKernelSize()) if layer.getNodeType() == "MP" else AvgPool(layer.getKernelSize(), layer.getKernelSize())
                 return generatedLayer
             case "LIN":
                 return LinearBlock(layer.getConnectionOutputSize(1), self.numberClasses, layer.getImageDimension())

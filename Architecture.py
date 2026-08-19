@@ -1,3 +1,5 @@
+import torch
+
 from Node import Node as Node
 from GenerateArchitecture import GenerateArchitecture as genArch
 from LayerDefinitions import LayerDefinitions as ld
@@ -15,6 +17,7 @@ class Architecture:
     _imageSize: int
     _fitness: float
     _noParameters: int
+    _model: torch.nn.Module
 
     def __init__(self, maxLength: int, inputChannels: int, imageSize: int) -> None:
         self._layerSize = {}
@@ -29,6 +32,7 @@ class Architecture:
         self._imageSize = imageSize
         self._fitness = 0
         self._noParameters = 0
+        self._model = None
 
     def generateArchitecture (self) -> None:
         newNode: Node = None
@@ -39,7 +43,7 @@ class Architecture:
         finalNode = genArch().generateOutputLayer(self._architecture, self.maxSize)
         self.addNode(finalNode.getNodeId(), finalNode)
         self.getActive()
-        self._activeArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
+        self._encodedArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
 
 
     def buildArchitecture (self, newArchitecture: dict[int, Node]) -> bool:
@@ -52,6 +56,7 @@ class Architecture:
             else:
                 return False
         self.getActive()
+        self._encodedArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
         return True
 
     def setArchitecture (self, newArchitecture: list[Node]) -> bool:
@@ -67,7 +72,7 @@ class Architecture:
                 return False
             self.addNode(newNode.getNodeId(), newNode)
         self.getActive()
-        self._activeArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
+        self._encodedArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
         return True
 
     def getLayerSize (self, layerId: int) -> int:
@@ -330,3 +335,12 @@ class Architecture:
 
     def setNoParameters (self, newNoParameters: int) -> None:
         self._noParameters = newNoParameters
+
+    def setModel (self, model: torch.nn.Module) -> None:
+        self._model = model
+
+    def getModel (self) -> torch.nn.Module:
+        return self._model
+
+    def getEncodedArchitecture (self) -> list:
+        return self._encodedArchitecture

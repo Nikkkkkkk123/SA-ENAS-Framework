@@ -12,6 +12,5 @@ class Encode:
             encodedLayer = ld.encodeLayer(layer)
             if encodedLayer is not None:
                 encodedArch.append(encodedLayer) # Encode the layer parameters and add them to the encoded architecture
-        print(f"Encoded Architecture: {encodedArch}")
-        
+
         return encodedArch

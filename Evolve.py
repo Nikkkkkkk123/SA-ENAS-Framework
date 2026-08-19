@@ -1,5 +1,6 @@
 import torchmetrics
 import torch
+from torchvision import transforms
 from Architecture import Architecture as arch
 from GA_ops import GA_ops as ga
 from Dataset import Dataset as dl
@@ -11,6 +12,9 @@ import copy
 import torch.optim as optim
 from tqdm import tqdm
 from sklearn.metrics import classification_report, f1_score
+from Encode import Encode as encode
+import torch.nn.functional as F
+from datetime import datetime
 
 class Evolve:
     _populationSize: int
@@ -37,35 +41,69 @@ class Evolve:
 
         self.bestModels = []
 
-        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.trainDL, self.valDL, self.testDL, self.classNames = dl().getDataset(self._batchSize, self._imageSize, self._inputChannels)
         self._currentGeneration = []
         self._entirePopulation = []
         self._bestModel = None
 
+        self.log = open("log.txt", "w")
+        self.accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=len(self.classNames)).to(self._device)
+        self.f1_score = torchmetrics.F1Score(task="multiclass", num_classes=len(self.classNames), average="weighted").to(self._device)
+
     def evolve (self) -> None:
+        self.log.write(f"{datetime.now()}: Starting the evolutionary process\n")
+        self.log.flush()
 
         self.generateInitialPopulation()
+
+        self.log.write(f"{datetime.now()}: Training initial population\n")
+        self.log.flush()
         self.runCurrentGenModel()
 
         for generation in range (1, self._noGenerations + 1):
             print(f"Generation {generation}/{self._noGenerations}")
+            self.log.write(f"{datetime.now()}: Generation {generation}/{self._noGenerations}\n")
+            self.log.flush()
             self.runGA()
 
             self.runCurrentGenModel()
 
+        self.log.write(f"{datetime.now()}: Finished evolutionary process\n")
+        self.log.flush()
+
         # now have the best model it needs to be tested
         self.bestModels.sort(key=lambda x: x[1], reverse=True)
-        self._bestModel = self.bestModels[0][0]
+        self._bestModel = self.bestModels[0][0].getModel()
+
+        self.log.write(f"{datetime.now()}: Best identified model architecture {self.bestModels[0][0].getEncodedArchitecture()}, Fitness: {self.bestModels[0][1]:.4f}\n")
+        self.log.flush()
+        # allPreds, allTargets = [], []
+
         if self._bestModel is not None:
-            model = LayerBlocks.model(self._bestModel, len(self.classNames), self._inputChannels)      
-            allPreds, allTargets = [], []
-            loop = tqdm(enumerate(self.testDL, 0), total=len(self.testDL), desc=f"Testing: Best Model", colour="blue")
-            allPreds, allTargets = self._validateModel(model, torch.nn.CrossEntropyLoss(), self._device, loop)
-            print(classification_report(allTargets, allPreds, target_names=self.classNames, digits=4, zero_division=0))
+            model = self._bestModel  
+            # model.to(self._device)
+            # loop = tqdm(enumerate(self.testDL, 0), total=len(self.testDL), desc=f"Testing: Best Model", colour="blue")
+            # allPreds, allTargets = self._validateModel(model, torch.nn.CrossEntropyLoss(), loop)
+
+            # self.log.write(f"{datetime.now()}: Best identified architecture F1 score: {(self.f1_score.compute().item() * 100):.2f}%\n")
+            # self.log.flush()
+
+            # report = classification_report(allTargets, allPreds, target_names=self.classNames, digits=4, zero_division=0)
+
+            # self.log.write(f"{datetime.now()}: Classification Report:\n{report}\n")
+            # store saved version of fully trained model
+            torch.save(model.state_dict(), "best_model.pth")
+
+        self.log.write(f"{datetime.now()}: List of best models\n")
+        self.log.flush()
+        for model, f1 in self.bestModels:
+            self.log.write(f"Architecture: {model.getEncodedArchitecture()}, Fitness: {(f1):.2f}%\n")
+            self.log.flush()
 
     def runCurrentGenModel (self) -> None:
         for candidate in self._currentGeneration:
+            self.log.write(f"{datetime.now()}: Evaluating candidate {candidate.getEncodedArchitecture()}\n")
             model = LayerBlocks.model(candidate, len(self.classNames), self._inputChannels)
             candidate.setNoParameters(sum(p.numel() for p in model.parameters() if p.requires_grad))
             model.to(self._device)
@@ -73,25 +111,33 @@ class Evolve:
             criterion = torch.nn.CrossEntropyLoss()
 
             for epoch in range(self._epochs):
+                self.accuracy.reset()
+                self.f1_score.reset()
                 loop = tqdm(enumerate(self.trainDL, 0), total=len(self.trainDL), desc=f"Training: Epoch {epoch + 1} / {self._epochs}", colour="blue")
+                self.log.write(f"{datetime.now()}: Training: Epoch {epoch + 1} / {self._epochs} || ")
+                self.log.flush()
+
                 self._trainModel(model, optimizer, criterion, loop)
-
+                self.accuracy.reset()
+                self.f1_score.reset()
                 loop = tqdm(enumerate(self.valDL, 0), total=len(self.valDL), desc=f"Validation: Epoch {epoch + 1} / {self._epochs}", colour="blue")
+                self.log.write(f"{datetime.now()}: Validation: Epoch {epoch + 1} / {self._epochs} || ")
+                self.log.flush()
 
-                allPreds, allTargets = self._validateModel(model, criterion, loop)
+                all_preds, all_targets = self._validateModel(model, criterion, loop)
+            overall = (self.f1_score.compute().item() * 100) # dont want to compute every time but this is mainly for testing at this point
 
-            overall = (f1_score(allPreds, allTargets, average="weighted") * 100)
             candidate.calculateFitness(overall)
-            self.bestModels.append((candidate, overall))
+            candidate.setModel(model)
+            self.log.write(f"{datetime.now()}: Evaluated candidate has a fitness of {candidate.getFitness()}\n")
+            self._addToBestModels(candidate, candidate.getFitness())
 
-    def _trainModel (self, model: torch.nn.Module, optimizer: torch.optim.Optimizer, criterion: torch.nn.Module, loop: tqdm) -> tuple[float, float]:
+    def _trainModel (self, model: torch.nn.Module, optimizer: torch.optim.Optimizer, criterion: torch.nn.Module, loop: tqdm) -> None:
         model.train()
-        accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=len(self.classNames)).to(self._device)
-        f1_score = torchmetrics.F1Score(task="multiclass", num_classes=len(self.classNames), average="weighted").to(self._device)
         for i, (images, labels) in loop:
-            inputs, labels = images.to(self._device), labels.to(self._device)
-
-            optimizer.zero_grad()
+            inputsOG, labels = images.to(self._device), labels.to(self._device)
+            inputsOG.requires_grad = True
+            inputs = F.interpolate(inputsOG, size=(self._imageSize, self._imageSize), mode='bilinear', align_corners=False)
 
             outputs = model(inputs)
             loss = criterion(outputs, labels)
@@ -100,49 +146,52 @@ class Evolve:
 
             optimizer.step()
 
-            accuracy.update(outputs, labels)
-            f1_score.update(outputs, labels)
+            self.accuracy.update(outputs, labels)
+            self.f1_score.update(outputs, labels)
 
-            loop.set_postfix(Accuracy=f"{accuracy.compute().item():.4f}", F1_Score=f"{f1_score.compute().item():.4f}")
+            loop.set_postfix(Accuracy=f"{self.accuracy.compute().item():.4f}", F1_Score=f"{self.f1_score.compute().item():.4f}")
+        self.log.write(f"Accuracy: {(self.accuracy.compute().item() * 100):.2f}% || F1_Score: {(self.f1_score.compute().item() * 100):.2f}%\n")
 
     def _validateModel (self, model: torch.nn.Module, criterion: torch.nn.Module, loop: tqdm) -> tuple[list[int], list[int]]:
         model.eval()
-        allPreds = []
-        allTargets = []
-        accuracy = torchmetrics.Accuracy(task="multiclass", num_classes=len(self.classNames)).to(self._device)
-        f1_score = torchmetrics.F1Score(task="multiclass", num_classes=len(self.classNames), average="weighted").to(self._device)
-        with torch.no_grad():
-            for i, (images, labels) in loop:
-                inputs, labels = images.to(self._device), labels.to(self._device)
+        accuracyResult: float = 0.0
+        f1ScoreResult: float = 0.0
+        allPreds, allTargets = [], []
 
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
+        for i, (images, labels) in loop:
+            inputsOG, labels = images.to(self._device), labels.to(self._device)
+            inputs = F.interpolate(inputsOG, size=(self._imageSize, self._imageSize), mode='bilinear', align_corners=False)
 
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
 
-                accuracy.update(outputs, labels)
-                f1_score.update(outputs, labels)
+            loss.backward()
 
-                loop.set_postfix(Accuracy=f"{accuracy.compute().item():.4f}", F1_Score=f"{f1_score.compute().item():.4f}")
+            self.accuracy.update(outputs, labels)
+            self.f1_score.update(outputs, labels)
 
-                for k in range (labels.size(0)):
-                    allPreds.append(outputs[k].argmax().item())
-                    allTargets.append(labels[k].item())
-                
+            accuracyResult = self.accuracy.compute().item()
+            f1ScoreResult = self.f1_score.compute().item()
+            loop.set_postfix(Accuracy=f"{accuracyResult:.4f}", F1_Score=f"{f1ScoreResult:.4f}")
+
+            for k in range (labels.size(0)):
+                allPreds.append(outputs[k].argmax().item())
+                allTargets.append(labels[k].item())
+
+        self.log.write(f"Accuracy: {(accuracyResult * 100):.2f}% || F1_Score: {(f1ScoreResult * 100):.2f}%\n")
+
         return allPreds, allTargets
 
 
     def runGA (self) -> None:
         tempGeneration: list[arch] = []
-        counter = 0
         for i in range (self._populationSize // 2):
             offspring1: arch = None
             offspring2: arch = None
 
             while offspring1 is None or offspring2 is None:
-                counter += 1
-                parent1, parent2 = ga.selectParents(self._currentGeneration)
 
-                offspring1, offspring2 = ga.crossover(parent1, parent2, self._maxSize, self._inputChannels, self._imageSize, self._mutationRate)
+                offspring1, offspring2 = ga.performGA(self._currentGeneration, self._maxSize, self._inputChannels, self._imageSize, self._mutationRate)
 
                 # If they are duplicates it currently remakes from scratch with different parents, this should be changed
                 if self.checkDuplicate(offspring1.getActiveEncoding()) and self.checkDuplicate(offspring2.getActiveEncoding()):
@@ -179,3 +228,9 @@ class Evolve:
         if newArch in self._entirePopulation:
             return False
         return True
+
+    def _addToBestModels (self, architecture: arch, f1: float) -> None:
+        if len(self.bestModels) >= 5:
+            self.bestModels.remove(self.bestModels[-1])
+        self.bestModels.append((architecture, f1))
+        self.bestModels.sort(key=lambda x: x[1], reverse=True)

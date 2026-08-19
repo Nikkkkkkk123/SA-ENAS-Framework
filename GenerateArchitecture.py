@@ -92,7 +92,7 @@ class GenerateArchitecture:
 
                 return False
             case "MP" | "AP":
-                newImageDimension = int(((layer.getConnectionImageDimension(1) - 2) / 2) + 1)
+                newImageDimension = int(((layer.getConnectionImageDimension(1) - layer.getKernelSize() + (2 * (layer.getKernelSize() // 2))) / 2) + 1)
 
                 if self.imageDimensionCheck(newImageDimension):
                     layer._imageDimension = newImageDimension
