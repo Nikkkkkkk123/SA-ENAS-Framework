@@ -177,8 +177,6 @@ class Evolve:
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
 
-                loss.backward()
-
                 self.accuracy.update(outputs, labels)
                 self.f1_score.update(outputs, labels)
 
