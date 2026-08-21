@@ -7,6 +7,7 @@ from Encode import Encode as encode
 import os
 import copy
 import random
+import numpy as np
 class Architecture:
 
     _architecture: dict[int, Node] # Currently this is [int, int] but it should be node just hasnt been implemented yet
@@ -18,6 +19,7 @@ class Architecture:
     _fitness: float
     _noParameters: int
     _model: torch.nn.Module
+    _trained: bool
 
     def __init__(self, maxLength: int, inputChannels: int, imageSize: int) -> None:
         self._layerSize = {}
@@ -33,6 +35,7 @@ class Architecture:
         self._fitness = 0
         self._noParameters = 0
         self._model = None
+        self._trained = False
 
     def generateArchitecture (self) -> None:
         newNode: Node = None
@@ -70,6 +73,7 @@ class Architecture:
                 newNode.changeConnection2(self._architecture.get(newNode.getConnection2().getNodeId()))
             if newNode.getNodeId() != 0 and genArch().validateLayer(newNode) is False:
                 return False
+            
             self.addNode(newNode.getNodeId(), newNode)
         self.getActive()
         self._encodedArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
@@ -343,4 +347,15 @@ class Architecture:
         return self._model
 
     def getEncodedArchitecture (self) -> list:
-        return self._encodedArchitecture
+        return [layer for layers in self._encodedArchitecture for layer in layers]
+
+    def predictFitness (self, surrogateModel) -> None:
+        self._fitness = surrogateModel.predict(np.asarray([self.getEncodedArchitecture()]).reshape(1, -1))[0]
+        return self._fitness
+
+    def setTrained (self, trained: bool) -> None:
+        self._trained = trained
+
+    def getTrained (self) -> bool:
+        return self._trained
+    

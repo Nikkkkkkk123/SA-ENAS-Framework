@@ -6,41 +6,44 @@ from torchvision import datasets, transforms
 import torch
 import os
 
-class ByteDataset (Dataset):
-    def __init__ (self, filePath, label = None):
-        self.filePath = filePath
-        self.label = label
-        self.classes = []
-        for root, dirs, files in os.walk(filePath):
-            self.samples = [(os.path.join(file.split(".")[0]), None) for file in files if file.endswith('.asm')]
+"""
+This below should not be needed like this. Interpolation layer is only required when generating new adversarial samples. So normal transformer can be utilised for the clean dataset
+"""
+# class ByteDataset (Dataset):
+#     def __init__ (self, filePath, label = None):
+#         self.filePath = filePath
+#         self.label = label
+#         self.classes = []
+#         for root, dirs, files in os.walk(filePath):
+#             self.samples = [(os.path.join(file.split(".")[0]), None) for file in files if file.endswith('.asm')]
 
-        firstFilePath = self.samples[0][0]
-        # print fil ename
+#         firstFilePath = self.samples[0][0]
+#         # print fil ename
 
-        for dir in os.listdir("D:\\TrainImg"):
-            self.classes.append(dir)
+#         for dir in os.listdir("D:\\TrainImg"):
+#             self.classes.append(dir)
 
-    def __len__ (self):
-        return len(self.samples)
+#     def __len__ (self):
+#         return len(self.samples)
 
-    def __getitem__(self, key):
-        sample = self.samples[key]
-        image = None
-        label = None
-        transform = transforms.Compose([
-            transforms.Grayscale(num_output_channels=1),
-            # transforms.Resize((self._image_size, self._image_size),
-            #                   interpolation=transforms.InterpolationMode.BILINEAR),
-            transforms.ToTensor(),
-        ])
-        for dir in os.listdir("D:\\TrainImg"):
-            if os.path.isfile(os.path.join("D:\\TrainImg", dir, os.path.basename(sample[0]) + ".bytes.png")):
-                label = dir
-                image = Image.open(os.path.join("D:\\TrainImg", dir, os.path.basename(sample[0]) + ".bytes.png"))
-                image = transform(image)
-                break
+#     def __getitem__(self, key):
+#         sample = self.samples[key]
+#         image = None
+#         label = None
+#         transform = transforms.Compose([
+#             transforms.Grayscale(num_output_channels=1),
+#             # transforms.Resize((self._image_size, self._image_size),
+#             #                   interpolation=transforms.InterpolationMode.BILINEAR),
+#             transforms.ToTensor(),
+#         ])
+#         for dir in os.listdir("D:\\TrainImg"):
+#             if os.path.isfile(os.path.join("D:\\TrainImg", dir, os.path.basename(sample[0]) + ".bytes.png")):
+#                 label = dir
+#                 image = Image.open(os.path.join("D:\\TrainImg", dir, os.path.basename(sample[0]) + ".bytes.png"))
+#                 image = transform(image)
+#                 break
 
-        return image, self.classes.index(label) if label is not None else -1
+#         return image, self.classes.index(label) if label is not None else -1
 
 class Dataset:
     _batch_size: int
@@ -57,15 +60,13 @@ class Dataset:
 
         transform = transforms.Compose([
             transforms.Grayscale(num_output_channels=self._input_channels),
-            # transforms.Resize((self._image_size, self._image_size),
-            #                   interpolation=transforms.InterpolationMode.BILINEAR),
+            transforms.Resize((self._image_size, self._image_size)),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
         ])
 
-        path = "D:\\train"
+        path = "D:\\TrainImg"
 
-        fullDataset = ByteDataset(filePath=path)
+        fullDataset = datasets.ImageFolder(root=path, transform=transform)
 
         trainSize = int(0.8 * len(fullDataset))
         valSize = int(0.1 * len(fullDataset))

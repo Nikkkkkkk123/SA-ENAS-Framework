@@ -23,7 +23,7 @@ class GA_ops:
         fittestCandidate = max(selectionPopulation, key=lambda candidate: candidate.getFitness())
         return fittestCandidate
 
-    def performGA (currPopulation: list[arch], maxSize: int, inputChannels: int, imageSize: int, mutationRate: float) -> tuple[arch, arch]:
+    def performGA (currPopulation: list[arch], maxSize: int, inputChannels: int, imageSize: int, mutationRate: float, crossoverRate: float) -> tuple[arch, arch]:
         parent1: arch = None
         parent2: arch = None
 
@@ -34,7 +34,7 @@ class GA_ops:
         while offspringArch_1 is None or offspringArch_2 is None:
             parent1, parent2 = GA_ops.selectParents(currPopulation)
 
-            offspringArch_1, offspringArch_2 = GA_ops._crossover(parent1, parent2, maxSize, inputChannels, imageSize)
+            offspringArch_1, offspringArch_2 = GA_ops._crossover(parent1, parent2, maxSize, inputChannels, imageSize, crossoverRate)
 
             # Mutation attempts 10 times, it it fails to mutate it will return nothing and loop to try again with new parents. If it is none then there is no use mutating the second offspring just have to try again
             offspringArch_1 = GA_ops.mutation(offspringArch_1, maxSize, mutationRate)
@@ -44,19 +44,24 @@ class GA_ops:
 
         return offspringArch_1, offspringArch_2
 
-    def _crossover (parent1: arch, parent2: arch, maxSize: int, inputChannels: int, imageSize: int) -> tuple[arch, arch]:
-        for i in range (1, 10):
-            point1 = random.randint(1, maxSize - 2)
-            point2 = random.randint(point1 + 1, maxSize - 1)
+    def _crossover (parent1: arch, parent2: arch, maxSize: int, inputChannels: int, imageSize: int, crossoverRate: float) -> tuple[arch, arch]:
+        crossoverChance = random.random()
+        # Check if crossover will occur. if it does then perform 2 point crossover. Otherwise return the parents as the offspring
+        if crossoverChance <= crossoverRate:
+            for i in range (1, 10):
+                point1 = random.randint(1, maxSize - 2)
+                point2 = random.randint(point1 + 1, maxSize - 1)
 
-            offspring1 = list(parent1._architecture.values())[0:point1] + list(parent2._architecture.values())[point1:point2] + list(parent1._architecture.values())[point2:]
-            offspring2 = list(parent2._architecture.values())[0:point1] + list(parent1._architecture.values())[point1:point2] + list(parent2._architecture.values())[point2:]
+                offspring1 = list(parent1._architecture.values())[0:point1] + list(parent2._architecture.values())[point1:point2] + list(parent1._architecture.values())[point2:]
+                offspring2 = list(parent2._architecture.values())[0:point1] + list(parent1._architecture.values())[point1:point2] + list(parent2._architecture.values())[point2:]
 
-            offspringArch_1 = arch(maxSize, inputChannels, imageSize)
-            offspringArch_2 = arch(maxSize, inputChannels, imageSize)
+                offspringArch_1 = arch(maxSize, inputChannels, imageSize)
+                offspringArch_2 = arch(maxSize, inputChannels, imageSize)
 
-            if offspringArch_1.setArchitecture(offspring1) and offspringArch_2.setArchitecture(offspring2):
-                return offspringArch_1, offspringArch_2
+                if offspringArch_1.setArchitecture(offspring1) and offspringArch_2.setArchitecture(offspring2):
+                    return offspringArch_1, offspringArch_2
+        else:
+            return arch(maxSize, inputChannels, imageSize).setArchitecture(list(parent1._architecture.values())), arch(maxSize, inputChannels, imageSize).setArchitecture(list(parent2._architecture.values()))
         return None, None
 
     """
