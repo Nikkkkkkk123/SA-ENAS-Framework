@@ -12,6 +12,7 @@ import copy
 import torch.optim as optim
 from tqdm import tqdm
 from sklearn.metrics import classification_report, f1_score
+from sklearn.metrics import confusion_matrix, classification_report, f1_score
 from Encode import Encode as encode
 import torch.nn.functional as F
 from datetime import datetime
@@ -32,9 +33,11 @@ class Evolve:
     _crossoverRate: float
     _device: str
     _surrogateEnabled: bool
+    _dataset: str
 
     def __init__ (self, populationSize: int, maxSize: int, inputChannels: int, noGenerations: int, imageSize: int, batchSize: int, epochs: int, 
                   mutationRate: float, crossoverRate: float, surrogateEnabled: bool) -> None:
+                  mutationRate: float, crossoverRate: float, surrogateEnabled: bool, dataset: str) -> None:
         self._populationSize = populationSize
         self._maxSize = maxSize
         self._inputChannels = inputChannels
@@ -50,6 +53,7 @@ class Evolve:
 
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.trainDL, self.valDL, self.testDL, self.classNames = dl().getDataset(self._batchSize, self._imageSize, self._inputChannels)
+        self.trainDL, self.valDL, self.testDL, self.classNames = dl().getDataset(self._batchSize, self._imageSize, self._inputChannels, dataset)
         self._currentGeneration = []
         self._entirePopulation = []
         self._bestModel = None

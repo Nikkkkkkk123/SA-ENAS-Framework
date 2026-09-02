@@ -46,8 +46,10 @@ class GA_ops:
 
     def _crossover (parent1: arch, parent2: arch, maxSize: int, inputChannels: int, imageSize: int, crossoverRate: float) -> tuple[arch, arch]:
         crossoverChance = random.random()
+        offspringArch_1: arch = None
+        offspringArch_2: arch = None
         # Check if crossover will occur. if it does then perform 2 point crossover. Otherwise return the parents as the offspring
-        if crossoverChance <= crossoverRate:
+        if crossoverChance <= 0:
             for i in range (1, 10):
                 point1 = random.randint(1, maxSize - 2)
                 point2 = random.randint(point1 + 1, maxSize - 1)
@@ -61,7 +63,8 @@ class GA_ops:
                 if offspringArch_1.setArchitecture(offspring1) and offspringArch_2.setArchitecture(offspring2):
                     return offspringArch_1, offspringArch_2
         else:
-            return arch(maxSize, inputChannels, imageSize).setArchitecture(list(parent1._architecture.values())), arch(maxSize, inputChannels, imageSize).setArchitecture(list(parent2._architecture.values()))
+            # 
+            return parent1, parent2
         return None, None
 
     """
@@ -74,7 +77,8 @@ class GA_ops:
         
         mutateType: str = None
         for _ in range (1, 10):
-            offSpringCopy: arch = copy.deepcopy(offspring) # This copy is used to store the original offspring incase mutation was unsucessful
+            offSpringCopy: arch
+            offSpringCopy = copy.deepcopy(offspring) # This copy is used to store the original offspring incase mutation was unsucessful
             for i in range (1, maxSize):
                 mutateChance = random.random()
                 if mutateChance < mutationRate:

@@ -199,7 +199,6 @@ class model (nn.Module):
         generatedLayer: This is the initialised layer the architecture
     """
     def layerSwitch (self, layer, index):
-        connectionSize = layer.getConnectionOutputSize(1)
         match layer.getNodeType():
             case "CB":
                 generatedlayer = ConvBlock(layer.getConnectionOutputSize(1), layer.getFilterSize(), layer.getKernelSize())
