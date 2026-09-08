@@ -163,7 +163,7 @@ class model (nn.Module):
     Return: 
         None
     """
-    def __init__(self, architecture, noClasses, inputChannels):
+    def __init__(self, architecture, noClasses, inputChannels, imageSize: int):
         super(model, self).__init__()
         self.layers = nn.ModuleList()
 
@@ -176,10 +176,10 @@ class model (nn.Module):
 
         # Due to architecture generation allowing for layers to go to different layers at once, filter sizes need to be stored so they can be obtained as the 8th layer may still take input from the 1st layer
         self.layerSizes = {}
-        self.layerSizes[0] = 1
+        self.layerSizes[0] = inputChannels
         index = 1
         self.imageDimensions = {}
-        self.imageDimensions[0] = 28 # currently the width and height of the input image is hard coded and needs to be changed
+        self.imageDimensions[0] = imageSize # currently the width and height of the input image is hard coded and needs to be changed
         self.activeArch = list(architecture.getActiveArch())
         for layer in list(architecture.getActiveArch().values())[1:]:
             archLayer = self.layerSwitch(layer, index)
