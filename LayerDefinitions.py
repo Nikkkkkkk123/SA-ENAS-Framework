@@ -121,8 +121,10 @@ class LayerDefinitions:
             return None
         connection1 = layer.getConnection1().getNodeId() if layer.getConnection1() is not None else 0
         connection2 = layer.getConnection2().getNodeId() if layer.getConnection2() is not None else 0
-        encodedFilterSize = 0 if layer.getFilterSize() is None or layer.getFilterSize() == 0 else list(FILTER_SIZE).index(layer.getFilterSize())
-        encodedKernelSize = 0 if layer.getKernelSize() is None or layer.getKernelSize() == 0 else list(KERNEL_SIZE).index(layer.getKernelSize())
+        originalFilter = layer.getFilterSize()
+        originalKernel = layer.getKernelSize()
+        encodedFilterSize = 0 if originalFilter is None or originalFilter == 0 else sorted(list(FILTER_SIZE)).index(originalFilter) + 1
+        encodedKernelSize = 0 if originalKernel is None or originalKernel == 0 else sorted(list(KERNEL_SIZE)).index(originalKernel) + 1
 
         if LayerDefinitions.LAYERINDEX[encodedType] == "LIN":
             return [encodedType, connection1]
