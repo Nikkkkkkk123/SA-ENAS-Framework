@@ -98,7 +98,7 @@ class Architecture:
     def getActive(self) -> dict[int, Node]:
         connectionSet = set()
         if self.checkConnections(self._architecture.get(self.maxSize), connectionSet):
-            self._encodeActive = self.findActiveEncoding()
+            self._encodeActive = encode.encode(list(self._activeArchitecture.values()), len(self._activeArchitecture) - 1)
         return self._activeArchitecture
 
     def checkConnections (self, node: Node, connectionSet: set) -> bool:
@@ -140,10 +140,6 @@ class Architecture:
 
     # This is not currently not going to be used but it is my idea to avoid training duplicate architectures.
     # But a encoding class will be made which will return the encoded version which then will be stored to avoid duplicates
-    def findActiveEncoding (self):
-        encoding = []
-        encoding = encode.encode(list(self._activeArchitecture.values()), len(self._activeArchitecture) - 1)
-        return encoding
 
     def getActiveArchLength (self) -> int:
         return len(self._activeArchitecture)   
@@ -326,7 +322,7 @@ class Architecture:
         if len(self._encodeActive) == 0:
             print("Active encoding is None, generating active encoding")
             os._exit(0)
-        return self._encodeActive
+        return [layer for layers in self._encodeActive for layer in layers]
 
     def getFitness (self) -> float:
         return self._fitness
@@ -339,12 +335,6 @@ class Architecture:
 
     def setNoParameters (self, newNoParameters: int) -> None:
         self._noParameters = newNoParameters
-
-    def setModel (self, model: torch.nn.Module) -> None:
-        self._model = model
-
-    def getModel (self) -> torch.nn.Module:
-        return self._model
 
     def getEncodedArchitecture (self) -> list:
         return [layer for layers in self._encodedArchitecture for layer in layers]
