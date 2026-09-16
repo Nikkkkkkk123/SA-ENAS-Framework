@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from PIL import Image
+from sympy import fu
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets, transforms
 import torch
@@ -53,7 +54,7 @@ class Dataset:
     def __init__ (self):
         return None
 
-    def getDataset(self, batchsize: int, image_size: int, input_channels: int):
+    def getDataset(self, batchsize: int, image_size: int, input_channels: int, dataset_path: str = "D:\\"):
         bs = batchsize
         self._image_size = image_size
         self._input_channels = input_channels
@@ -64,13 +65,21 @@ class Dataset:
             transforms.ToTensor(),
         ])
 
-        path = "D:\\TrainImg"
-
-        fullDataset = datasets.ImageFolder(root=path, transform=transform)
-
+        path = dataset_path
+        malpath = os.path.join(path, "/TrainImg/")
+        fullDataset = datasets.ImageFolder(root=malpath, transform=transform)
+        benPath = os.path.join(path, "/TrainBenImg")
+        fullBenDataset = datasets.ImageFolder(root=benPath, transform=transform) # Offset the labels of the benign dataset
+        fullBenDataset.class_to_idx = {class_name: idx + len(fullDataset.classes) for class_name, idx in fullBenDataset.class_to_idx.items()}
+        fullBenDataset.samples = [(sample[0], sample[1] + len(fullDataset.classes)) for sample in fullBenDataset.samples]
+        fullBenDataset.targets = [target + len(fullDataset.classes) for target in fullBenDataset.targets]
         trainSize = int(0.8 * len(fullDataset))
         valSize = int(0.1 * len(fullDataset))
         testSize = len(fullDataset) - trainSize - valSize
+
+        benTrainSize = int(0.8 * len(fullBenDataset))
+        benValSize = int(0.1 * len(fullBenDataset))
+        benTestSize = len(fullBenDataset) - benTrainSize - benValSize
 
         train_data, val_data, test_data= torch.utils.data.random_split(
             fullDataset, 
@@ -78,9 +87,25 @@ class Dataset:
             generator=torch.Generator().manual_seed(42)
         )
 
-        
-        trainLoader = DataLoader(train_data, batch_size=bs, shuffle=True, num_workers=4, persistent_workers=True)
-        valLoader = DataLoader(val_data, batch_size=bs, shuffle=False, num_workers=4, persistent_workers=True)
-        testLoader = DataLoader(test_data, batch_size=bs, shuffle=False, num_workers=4, persistent_workers=True)
+        bentrain_data, benval_data, bentest_data= torch.utils.data.random_split(
+            fullBenDataset, 
+            [benTrainSize, benValSize, benTestSize],
+            generator=torch.Generator().manual_seed(42)
+        )
 
-        return trainLoader, valLoader, testLoader, fullDataset.classes
+        fullTrain = torch.utils.data.ConcatDataset([train_data, bentrain_data])
+        fullVal = torch.utils.data.ConcatDataset([val_data, benval_data])
+        fullTest = torch.utils.data.ConcatDataset([test_data, bentest_data])
+
+        # check issue with class confusion
+        print("fullDataset classes:", fullDataset.classes, fullDataset.class_to_idx)
+        print("fullBenDataset classes:", fullBenDataset.classes, fullBenDataset.class_to_idx)
+
+
+        trainLoader = DataLoader(fullTrain, batch_size=bs, shuffle=True, num_workers=4, persistent_workers=True)
+        valLoader = DataLoader(fullVal, batch_size=bs, shuffle=False, num_workers=4, persistent_workers=True)
+        testLoader = DataLoader(fullTest, batch_size=bs, shuffle=False, num_workers=4, persistent_workers=True)
+
+        classes = fullDataset.classes + fullBenDataset.classes
+
+        return trainLoader, valLoader, testLoader, classes

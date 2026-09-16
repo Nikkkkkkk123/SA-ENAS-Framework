@@ -132,7 +132,7 @@ class Evolve:
         self.log.write(f"{datetime.now()}: Final evaluation of model {encoded_model} has a fitness of {(final_architecture.getFitness()):.2f}%\n")
         self.log.flush()
 
-        self._testModel(model)
+        self._testModel(model, final_architecture)
 
     def  runCurrentGenModel (self, evaluateCandidateList: list) -> None:
         no_candidate = 1
