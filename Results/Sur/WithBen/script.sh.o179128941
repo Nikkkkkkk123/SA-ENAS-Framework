@@ -1,0 +1,65 @@
+Train Size: 8694, Validation Size: 1086, Test Size: 1088
+Benign Train Size: 11504, Validation Size: 1438, Test Size: 1438
+Generation 1/50
+Generation 2/50
+Generation 3/50
+Generation 4/50
+Generation 5/50
+Generation 6/50
+Generation 7/50
+Generation 8/50
+Generation 9/50
+Generation 10/50
+Generation 11/50
+Generation 12/50
+Generation 13/50
+Generation 14/50
+Generation 15/50
+Generation 16/50
+Generation 17/50
+Generation 18/50
+Generation 19/50
+Generation 20/50
+Generation 21/50
+Generation 22/50
+Generation 23/50
+Generation 24/50
+Generation 25/50
+Generation 26/50
+Generation 27/50
+Generation 28/50
+Generation 29/50
+Generation 30/50
+Generation 31/50
+Generation 32/50
+Generation 33/50
+Generation 34/50
+Generation 35/50
+Generation 36/50
+Generation 37/50
+Generation 38/50
+Generation 39/50
+Generation 40/50
+Generation 41/50
+Generation 42/50
+Generation 43/50
+Generation 44/50
+Generation 45/50
+Generation 46/50
+Generation 47/50
+Generation 48/50
+Generation 49/50
+
+======================================================================================
+                  Resource Usage on 2026-09-17 07:39:45:
+   Job Id:             179128941.gadi-pbs
+   Project:            ea98
+   Exit Status:        0
+   Service Units:      1258.20
+   NCPUs Requested:    24                  CPU Time Used: 242:37:17       
+   Memory Requested:   32.0GB                Memory Used: 32.0GB          
+   NGPUs Requested:    2                 GPU Utilisation: 0%              
+                                         GPU Memory Used: 22.02GB         
+   Walltime Requested: 48:00:00            Walltime Used: 17:28:30        
+   JobFS Requested:    25.0GB                 JobFS Used: 20.16GB         
+======================================================================================

@@ -1,0 +1,135 @@
+2026-09-16 17:26:50.962268: Starting final evaluation of model [1, 0, 0, 1, 1, 4, 1, 0, 0, 2, 5, 1, 2, 0, 0, 3, 3, 2, 0, 1, 1, 4, 0, 2, 1, 3, 5, 2, 0, 1, 2, 2, 2, 3, 3, 3, 0, 7, 0, 1, 6, 6, 0, 0, 0, 7, 6]
+2026-09-16 17:27:02.513433: Training: Epoch 1 / 50 || Accuracy: 88.73% || F1_Score: 88.59%
+2026-09-16 17:27:55.771290: Validation: Epoch 1 / 50 || Accuracy: 92.36% || F1_Score: 92.28%
+2026-09-16 17:28:37.372712: Training: Epoch 2 / 50 || Accuracy: 94.36% || F1_Score: 94.31%
+2026-09-16 17:28:52.058259: Validation: Epoch 2 / 50 || Accuracy: 93.09% || F1_Score: 93.10%
+2026-09-16 17:28:53.809268: Training: Epoch 3 / 50 || Accuracy: 95.54% || F1_Score: 95.52%
+2026-09-16 17:29:07.733061: Validation: Epoch 3 / 50 || Accuracy: 94.01% || F1_Score: 93.97%
+2026-09-16 17:29:09.480961: Training: Epoch 4 / 50 || Accuracy: 96.22% || F1_Score: 96.20%
+2026-09-16 17:29:22.950218: Validation: Epoch 4 / 50 || Accuracy: 94.75% || F1_Score: 94.75%
+2026-09-16 17:29:24.731232: Training: Epoch 5 / 50 || Accuracy: 96.85% || F1_Score: 96.83%
+2026-09-16 17:29:38.471940: Validation: Epoch 5 / 50 || Accuracy: 95.12% || F1_Score: 95.16%
+2026-09-16 17:29:40.227691: Training: Epoch 6 / 50 || Accuracy: 97.14% || F1_Score: 97.13%
+2026-09-16 17:29:53.862733: Validation: Epoch 6 / 50 || Accuracy: 95.12% || F1_Score: 95.14%
+2026-09-16 17:29:55.609508: Training: Epoch 7 / 50 || Accuracy: 97.49% || F1_Score: 97.49%
+2026-09-16 17:30:09.176945: Validation: Epoch 7 / 50 || Accuracy: 95.86% || F1_Score: 95.84%
+2026-09-16 17:30:10.923299: Training: Epoch 8 / 50 || Accuracy: 97.76% || F1_Score: 97.75%
+2026-09-16 17:30:24.620143: Validation: Epoch 8 / 50 || Accuracy: 96.41% || F1_Score: 96.40%
+2026-09-16 17:30:26.401260: Training: Epoch 9 / 50 || Accuracy: 97.85% || F1_Score: 97.84%
+2026-09-16 17:30:40.016528: Validation: Epoch 9 / 50 || Accuracy: 95.40% || F1_Score: 95.32%
+2026-09-16 17:30:41.763496: Training: Epoch 10 / 50 || Accuracy: 98.13% || F1_Score: 98.12%
+2026-09-16 17:30:55.508942: Validation: Epoch 10 / 50 || Accuracy: 95.30% || F1_Score: 95.28%
+2026-09-16 17:30:57.262130: Training: Epoch 11 / 50 || Accuracy: 98.26% || F1_Score: 98.26%
+2026-09-16 17:31:11.014259: Validation: Epoch 11 / 50 || Accuracy: 96.22% || F1_Score: 96.25%
+2026-09-16 17:31:12.805844: Training: Epoch 12 / 50 || Accuracy: 98.62% || F1_Score: 98.62%
+2026-09-16 17:31:26.860473: Validation: Epoch 12 / 50 || Accuracy: 94.11% || F1_Score: 94.28%
+2026-09-16 17:31:28.687455: Training: Epoch 13 / 50 || Accuracy: 98.78% || F1_Score: 98.78%
+2026-09-16 17:31:42.338154: Validation: Epoch 13 / 50 || Accuracy: 95.76% || F1_Score: 95.78%
+2026-09-16 17:31:44.140723: Training: Epoch 14 / 50 || Accuracy: 98.92% || F1_Score: 98.92%
+2026-09-16 17:31:57.764562: Validation: Epoch 14 / 50 || Accuracy: 96.78% || F1_Score: 96.79%
+2026-09-16 17:31:59.600454: Training: Epoch 15 / 50 || Accuracy: 98.50% || F1_Score: 98.50%
+2026-09-16 17:32:13.190322: Validation: Epoch 15 / 50 || Accuracy: 95.86% || F1_Score: 95.87%
+2026-09-16 17:32:14.995337: Training: Epoch 16 / 50 || Accuracy: 98.82% || F1_Score: 98.82%
+2026-09-16 17:32:28.556577: Validation: Epoch 16 / 50 || Accuracy: 96.69% || F1_Score: 96.69%
+2026-09-16 17:32:30.381432: Training: Epoch 17 / 50 || Accuracy: 98.75% || F1_Score: 98.75%
+2026-09-16 17:32:43.868039: Validation: Epoch 17 / 50 || Accuracy: 96.22% || F1_Score: 96.17%
+2026-09-16 17:32:45.692178: Training: Epoch 18 / 50 || Accuracy: 98.62% || F1_Score: 98.62%
+2026-09-16 17:32:59.298276: Validation: Epoch 18 / 50 || Accuracy: 97.05% || F1_Score: 97.05%
+2026-09-16 17:33:01.092157: Training: Epoch 19 / 50 || Accuracy: 98.90% || F1_Score: 98.90%
+2026-09-16 17:33:14.566463: Validation: Epoch 19 / 50 || Accuracy: 95.30% || F1_Score: 95.33%
+2026-09-16 17:33:16.380491: Training: Epoch 20 / 50 || Accuracy: 99.14% || F1_Score: 99.14%
+2026-09-16 17:33:29.879711: Validation: Epoch 20 / 50 || Accuracy: 96.78% || F1_Score: 96.78%
+2026-09-16 17:33:31.646569: Training: Epoch 21 / 50 || Accuracy: 99.19% || F1_Score: 99.19%
+2026-09-16 17:33:45.639723: Validation: Epoch 21 / 50 || Accuracy: 97.15% || F1_Score: 97.15%
+2026-09-16 17:33:47.463584: Training: Epoch 22 / 50 || Accuracy: 99.11% || F1_Score: 99.11%
+2026-09-16 17:34:01.249884: Validation: Epoch 22 / 50 || Accuracy: 95.49% || F1_Score: 95.49%
+2026-09-16 17:34:03.064115: Training: Epoch 23 / 50 || Accuracy: 99.14% || F1_Score: 99.14%
+2026-09-16 17:34:16.631745: Validation: Epoch 23 / 50 || Accuracy: 96.50% || F1_Score: 96.48%
+2026-09-16 17:34:18.446077: Training: Epoch 24 / 50 || Accuracy: 98.90% || F1_Score: 98.90%
+2026-09-16 17:34:32.108266: Validation: Epoch 24 / 50 || Accuracy: 97.05% || F1_Score: 97.06%
+2026-09-16 17:34:33.944154: Training: Epoch 25 / 50 || Accuracy: 98.87% || F1_Score: 98.87%
+2026-09-16 17:34:47.673073: Validation: Epoch 25 / 50 || Accuracy: 96.50% || F1_Score: 96.47%
+2026-09-16 17:34:49.481255: Training: Epoch 26 / 50 || Accuracy: 98.94% || F1_Score: 98.94%
+2026-09-16 17:35:03.139423: Validation: Epoch 26 / 50 || Accuracy: 93.55% || F1_Score: 93.65%
+2026-09-16 17:35:04.943929: Training: Epoch 27 / 50 || Accuracy: 99.24% || F1_Score: 99.24%
+2026-09-16 17:35:18.569068: Validation: Epoch 27 / 50 || Accuracy: 96.50% || F1_Score: 96.51%
+2026-09-16 17:35:20.393017: Training: Epoch 28 / 50 || Accuracy: 99.54% || F1_Score: 99.54%
+2026-09-16 17:35:33.938812: Validation: Epoch 28 / 50 || Accuracy: 97.05% || F1_Score: 97.07%
+2026-09-16 17:35:35.734942: Training: Epoch 29 / 50 || Accuracy: 99.46% || F1_Score: 99.46%
+2026-09-16 17:35:49.343455: Validation: Epoch 29 / 50 || Accuracy: 96.41% || F1_Score: 96.42%
+2026-09-16 17:35:51.161545: Training: Epoch 30 / 50 || Accuracy: 99.45% || F1_Score: 99.45%
+2026-09-16 17:36:08.209163: Validation: Epoch 30 / 50 || Accuracy: 96.96% || F1_Score: 96.97%
+2026-09-16 17:36:10.714501: Training: Epoch 31 / 50 || Accuracy: 99.52% || F1_Score: 99.52%
+2026-09-16 17:36:26.967370: Validation: Epoch 31 / 50 || Accuracy: 96.87% || F1_Score: 96.88%
+2026-09-16 17:36:28.760759: Training: Epoch 32 / 50 || Accuracy: 98.42% || F1_Score: 98.43%
+2026-09-16 17:36:42.214228: Validation: Epoch 32 / 50 || Accuracy: 96.87% || F1_Score: 96.87%
+2026-09-16 17:36:44.020935: Training: Epoch 33 / 50 || Accuracy: 99.10% || F1_Score: 99.10%
+2026-09-16 17:36:57.713540: Validation: Epoch 33 / 50 || Accuracy: 96.41% || F1_Score: 96.41%
+2026-09-16 17:36:59.514026: Training: Epoch 34 / 50 || Accuracy: 99.41% || F1_Score: 99.41%
+2026-09-16 17:37:13.220756: Validation: Epoch 34 / 50 || Accuracy: 96.50% || F1_Score: 96.53%
+2026-09-16 17:37:15.012175: Training: Epoch 35 / 50 || Accuracy: 99.76% || F1_Score: 99.76%
+2026-09-16 17:37:28.683238: Validation: Epoch 35 / 50 || Accuracy: 97.42% || F1_Score: 97.43%
+2026-09-16 17:37:30.482778: Training: Epoch 36 / 50 || Accuracy: 99.68% || F1_Score: 99.68%
+2026-09-16 17:37:44.049022: Validation: Epoch 36 / 50 || Accuracy: 96.96% || F1_Score: 96.98%
+2026-09-16 17:37:46.216790: Training: Epoch 37 / 50 || Accuracy: 99.71% || F1_Score: 99.71%
+2026-09-16 17:37:59.796795: Validation: Epoch 37 / 50 || Accuracy: 97.61% || F1_Score: 97.60%
+2026-09-16 17:38:01.581718: Training: Epoch 38 / 50 || Accuracy: 99.74% || F1_Score: 99.74%
+2026-09-16 17:38:15.129364: Validation: Epoch 38 / 50 || Accuracy: 97.33% || F1_Score: 97.33%
+2026-09-16 17:38:16.912282: Training: Epoch 39 / 50 || Accuracy: 99.68% || F1_Score: 99.68%
+2026-09-16 17:38:30.534616: Validation: Epoch 39 / 50 || Accuracy: 96.96% || F1_Score: 96.96%
+2026-09-16 17:38:32.347077: Training: Epoch 40 / 50 || Accuracy: 99.22% || F1_Score: 99.22%
+2026-09-16 17:38:45.956485: Validation: Epoch 40 / 50 || Accuracy: 96.69% || F1_Score: 96.67%
+2026-09-16 17:38:47.776734: Training: Epoch 41 / 50 || Accuracy: 98.77% || F1_Score: 98.77%
+2026-09-16 17:39:01.538352: Validation: Epoch 41 / 50 || Accuracy: 95.12% || F1_Score: 95.11%
+2026-09-16 17:39:03.330547: Training: Epoch 42 / 50 || Accuracy: 98.88% || F1_Score: 98.88%
+2026-09-16 17:39:16.879956: Validation: Epoch 42 / 50 || Accuracy: 96.87% || F1_Score: 96.88%
+2026-09-16 17:39:18.685543: Training: Epoch 43 / 50 || Accuracy: 99.65% || F1_Score: 99.66%
+2026-09-16 17:39:32.250297: Validation: Epoch 43 / 50 || Accuracy: 96.96% || F1_Score: 96.96%
+2026-09-16 17:39:34.044261: Training: Epoch 44 / 50 || Accuracy: 99.55% || F1_Score: 99.55%
+2026-09-16 17:39:47.540963: Validation: Epoch 44 / 50 || Accuracy: 97.70% || F1_Score: 97.70%
+2026-09-16 17:39:49.368559: Training: Epoch 45 / 50 || Accuracy: 99.76% || F1_Score: 99.76%
+2026-09-16 17:40:03.069700: Validation: Epoch 45 / 50 || Accuracy: 97.51% || F1_Score: 97.53%
+2026-09-16 17:40:04.898338: Training: Epoch 46 / 50 || Accuracy: 99.79% || F1_Score: 99.79%
+2026-09-16 17:40:18.331666: Validation: Epoch 46 / 50 || Accuracy: 97.79% || F1_Score: 97.79%
+2026-09-16 17:40:20.152989: Training: Epoch 47 / 50 || Accuracy: 99.79% || F1_Score: 99.79%
+2026-09-16 17:40:33.648284: Validation: Epoch 47 / 50 || Accuracy: 97.88% || F1_Score: 97.89%
+2026-09-16 17:40:35.438409: Training: Epoch 48 / 50 || Accuracy: 99.83% || F1_Score: 99.83%
+2026-09-16 17:40:49.002678: Validation: Epoch 48 / 50 || Accuracy: 97.79% || F1_Score: 97.80%
+2026-09-16 17:40:50.793753: Training: Epoch 49 / 50 || Accuracy: 99.83% || F1_Score: 99.83%
+2026-09-16 17:41:04.612327: Validation: Epoch 49 / 50 || Accuracy: 97.79% || F1_Score: 97.77%
+2026-09-16 17:41:06.410025: Training: Epoch 50 / 50 || Accuracy: 99.64% || F1_Score: 99.64%
+2026-09-16 17:41:19.857045: Validation: Epoch 50 / 50 || Accuracy: 97.05% || F1_Score: 97.05%
+2026-09-16 17:41:21.636880: Evaluated candidate has a fitness of 96.95968116807748
+2026-09-16 17:41:21.636880: Final evaluation of model [1, 0, 0, 1, 1, 4, 1, 0, 0, 2, 5, 1, 2, 0, 0, 3, 3, 2, 0, 1, 1, 4, 0, 2, 1, 3, 5, 2, 0, 1, 2, 2, 2, 3, 3, 3, 0, 7, 0, 1, 6, 6, 0, 0, 0, 7, 6] has a fitness of 96.96%
+2026-09-16 17:41:21.636880: Begging final test of model
+Final test results of model [1, 0, 0, 1, 1, 4, 1, 0, 0, 2, 5, 1, 2, 0, 0, 3, 3, 2, 0, 1, 1, 4, 0, 2, 1, 3, 5, 2, 0, 1, 2, 2, 2, 3, 3, 3, 0, 7, 0, 1, 6, 6, 0, 0, 0, 7, 6]
+No Parameters: 93033, F1 score: 0.9725
+Final Test Accuracy: 97.24% || Final Test F1_Score: 97.25%
+Confusion Matrix:
+[[107   0   0   1   0   1   0   0   0]
+ [  0  43   0   0   0   0   0   0   0]
+ [  0   1 294   0   0   0   0   0   0]
+ [  1   0   0 242   2   1   0   3   1]
+ [  0   0   0   0 102   6   0   2   3]
+ [  0   0   0   0   1 149   0   3   1]
+ [  0   0   0   0   0   0   1   0   0]
+ [  0   1   1   1   0   0   0  80   0]
+ [  0   0   0   0   0   0   0   0  40]]
+Classification Report:
+                precision    recall  f1-score   support
+
+         Gatak     0.9907    0.9817    0.9862       109
+  Kelihos_ver1     0.9556    1.0000    0.9773        43
+  Kelihos_ver3     0.9966    0.9966    0.9966       295
+      Lollipop     0.9918    0.9680    0.9798       250
+Obfuscator.ACY     0.9714    0.9027    0.9358       113
+        Ramnit     0.9490    0.9675    0.9582       154
+         Simda     1.0000    1.0000    1.0000         1
+        Tracur     0.9091    0.9639    0.9357        83
+         Vundo     0.8889    1.0000    0.9412        40
+
+      accuracy                         0.9724      1088
+     macro avg     0.9615    0.9756    0.9678      1088
+  weighted avg     0.9733    0.9724    0.9725      1088
+
+Testing Finished

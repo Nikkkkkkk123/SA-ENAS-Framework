@@ -59,7 +59,7 @@ class Evolve:
         self._entirePopulation = []
         self._bestModel = None
         self.surrogate = Surrogate.Surrogate()
-        self.log = open("log.txt", "w")
+        self.log = open("Results/Sur/NoBen/NoWithBenRetrain.txt", "w")
 
         self.surTrain = []
         self.surLabels = []
@@ -257,7 +257,7 @@ class Evolve:
         self.log.write(f"No Parameters: {candidate.getNoParameters()}, F1 score: {f1ScoreResult:.4f}\n")
         self.log.write(f"Final Test Accuracy: {(accuracyResult * 100):.2f}% || Final Test F1_Score: {(f1ScoreResult * 100):.2f}%\n")
         self.log.write(f"Confusion Matrix:\n{confusion_matrix(np.concatenate(allTargets), np.concatenate(allPreds))}\n")
-        self.log.write(f"Classification Report:\n{classification_report(np.concatenate(allTargets), np.concatenate(allPreds), target_names=self.classNames)}\n")
+        self.log.write(f"Classification Report:\n{classification_report(np.concatenate(allTargets), np.concatenate(allPreds), target_names=self.classNames, digits=4)}\n")
         self.log.flush()
         self.log.write(f"Testing Finished\n")
         del allPreds, allTargets
