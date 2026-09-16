@@ -129,3 +129,15 @@ class LayerDefinitions:
         if LayerDefinitions.LAYERINDEX[encodedType] == "LIN":
             return [encodedType, connection1]
         return [encodedType, connection1, connection2, encodedFilterSize, encodedKernelSize]
+
+    @classmethod
+    def decodeLayer (cls, encodedLayer: list[int]) -> list:
+        layerType = LayerDefinitions.LAYERINDEX[encodedLayer[0]]
+        connection1 = encodedLayer[1]
+        if layerType in LayerDefinitions.SELECTABLELAYERS:
+            connection2 = encodedLayer[2]
+            filterSize = None if encodedLayer[3] == 0 else sorted(list(FILTER_SIZE))[encodedLayer[3] - 1]
+            kernelSize = None if encodedLayer[4] == 0 else sorted(list(KERNEL_SIZE))[encodedLayer[4] - 1]
+            return [layerType, connection1, connection2, filterSize, kernelSize]
+
+        return [layerType, connection1, None, None, None]

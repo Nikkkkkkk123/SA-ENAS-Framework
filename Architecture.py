@@ -62,6 +62,24 @@ class Architecture:
         self._encodedArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
         return True
 
+    def buildEncodedArchitecture (self, encodedArchitecture: str) -> bool:
+        self._architecture = {}
+
+        # Add the input layer first
+        self.addNode(0, genArch().generateInputLayer(0, self.inputChannels, self._imageSize))
+
+        for i, layer in enumerate(range(0, len(encodedArchitecture), 5)):
+            layer = encodedArchitecture[layer:layer + 5]
+            newNode = genArch().generateEncodedLayer(self._architecture, (i+1), layer, self.inputChannels, self._imageSize)
+            if newNode is not None:
+                self.addNode(newNode.getNodeId(), newNode)
+            else:
+                return False
+        self.getActive()
+        # Given this is only for final training this is not needed but is just here for consistency and testing
+        self._encodedArchitecture = encode.encode(list(self._architecture.values()), self.maxSize)
+        return True
+
     def setArchitecture (self, newArchitecture: list[Node]) -> bool:
         self.addNode(newArchitecture[0].getNodeId(), newArchitecture[0])
         for node in newArchitecture[1:]:
@@ -340,7 +358,7 @@ class Architecture:
         return [layer for layers in self._encodedArchitecture for layer in layers]
 
     def predictFitness (self, surrogateModel) -> None:
-        self._fitness = surrogateModel.predict(np.asarray([self.getEncodedArchitecture()]).reshape(1, -1))[0]
+        self._fitness = surrogateModel.predict(np.asarray([self.getEncodedArchitecture()]).reshape(1, -1))[0].item()
         return self._fitness
 
     def setTrained (self, trained: bool) -> None:

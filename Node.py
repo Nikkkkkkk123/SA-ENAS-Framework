@@ -101,6 +101,14 @@ class Node:
         else:
             raise ValueError("Invalid connection number. Must be 1 or 2.")
 
+    def getConnectionLayerSize (self, connectionNumber: int) -> int:
+        if connectionNumber == 1:
+            return self.getConnection1().getLayerSize() if self._connection1 is not None else 0
+        elif connectionNumber == 2:
+            return self.getConnection2().getLayerSize() if self._connection2 is not None else 0
+        else:
+            raise ValueError("Invalid connection number. Must be 1 or 2.")
+
     def getNodeInformation (self):
         nodeInfo = []
 
