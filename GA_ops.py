@@ -49,7 +49,7 @@ class GA_ops:
         offspringArch_1: arch = None
         offspringArch_2: arch = None
         # Check if crossover will occur. if it does then perform 2 point crossover. Otherwise return the parents as the offspring
-        if crossoverChance <= 0:
+        if crossoverChance <= crossoverRate:
             for i in range (1, 10):
                 point1 = random.randint(1, maxSize - 2)
                 point2 = random.randint(point1 + 1, maxSize - 1)
@@ -63,8 +63,17 @@ class GA_ops:
                 if offspringArch_1.setArchitecture(offspring1) and offspringArch_2.setArchitecture(offspring2):
                     return offspringArch_1, offspringArch_2
         else:
-            # 
-            return parent1, parent2
+            # This will return a new architecture of the parents as it failed crossover.
+            # This does not need to check if the architecture has been manually trained as it will check if it is a duplicate against architectures that have been manually trained
+            # This was done since architecture objects are stored in the best models list which we do not want to alter the stored values. Additionally, if the model has already been trained
+            # Then this boolean will stop it from being trained. It is just better to store a new version of the object and ensure that the active architecture is different
+            offspringArch_1 = arch(maxSize, inputChannels, imageSize)
+            offspringArch_2 = arch(maxSize, inputChannels, imageSize)
+
+            offspringArch_1.setArchitecture(list(parent1._architecture.values()))
+            offspringArch_2.setArchitecture(list(parent2._architecture.values()))
+
+            return offspringArch_1, offspringArch_2
         return None, None
 
     """

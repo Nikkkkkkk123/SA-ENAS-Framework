@@ -27,6 +27,28 @@ class GenerateArchitecture:
                 newNode = None
         return newNode
 
+    def generateEncodedLayer (self, architecture: dict[int, Node], nodeId: int, encodedLayer: list, inputChannels: int, imageSize: int) -> Node:
+        if nodeId == 0:
+            return GenerateArchitecture.generateInputLayer(nodeId, 0, inputChannels, imageSize)
+
+        # decode the layer to get the parameters required to create the node
+        layer = ld.decodeLayer(encodedLayer)
+
+        layerType = layer[0]
+
+        connection1 = architecture[layer[1]] if layer[1] in architecture else None
+        connection2 = architecture[layer[2]] if layer[2] in architecture else None
+
+        filterSize = layer[3] if len(layer) > 3 else None
+        kernelSize = layer[4] if len(layer) > 4 else None
+
+        newNode = Node(nodeId, layerType, connection1, connection2, filterSize, kernelSize, inputChannels, imageSize)
+
+        if self.layerSwitch(newNode) is False:
+            return None
+        
+        return newNode
+
     def buildLayer (self, layer: Node) -> bool:
         if layer.getNodeId() == 0:
             return GenerateArchitecture.generateInputLayer(layer.getNodeId(), 0, layer.getLayerSize(), layer.getImageDimension())
@@ -53,7 +75,7 @@ class GenerateArchitecture:
 
     # This is done to calculate the output dimensions of the layers and images to ensure valid layers are being put in and avoid architectures that may just be pooling to image dimensions are 0
     def layerSwitch (self, layer: Node) -> bool:
-        connectionSize = layer.getConnection1()._layerSize
+        connectionSize = self.getConnectionSize(layer, 1)
         match layer.getNodeType():
             case "CB":
                 newImageDimension = int (((layer.getConnectionImageDimension(1) - layer.getKernelSize() + (2 * (layer.getKernelSize() // 2))) / 1) + 1)
@@ -110,6 +132,14 @@ class GenerateArchitecture:
             return layer.getConnectionOutputSize(1)
         elif connectionNumber == 2:
             return layer.getConnectionOutputSize(2)
+        else:
+            raise ValueError("Invalid connection number. Must be 1 or 2.")
+
+    def getConnectionLayerSize (self, layer: Node, connectionNumber: int) -> int:
+        if connectionNumber == 1:
+            return layer.getConnectionLayerSize(1)
+        elif connectionNumber == 2:
+            return layer.getConnectionLayerSize(2)
         else:
             raise ValueError("Invalid connection number. Must be 1 or 2.")
 
