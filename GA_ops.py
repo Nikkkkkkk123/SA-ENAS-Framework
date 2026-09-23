@@ -1,4 +1,5 @@
 from Architecture import Architecture as arch
+from LayerDefinitions import LayerDefinitions
 from Node import Node
 
 import copy
@@ -94,7 +95,8 @@ class GA_ops:
                     succMutate: bool = False
                     while not succMutate:
                         mutationType = random.choice(GA_ops.mutationOptions)
-                        succMutate = GA_ops.mutateSwitch(offSpringCopy, offSpringCopy.getLayer(i), mutationType)
+                        if LayerDefinitions.canMutateOption(offSpringCopy.getLayer(i).getNodeType(), mutationType):
+                            succMutate = GA_ops.mutateSwitch(offSpringCopy, offSpringCopy.getLayer(i), mutationType)
 
             # Check the mutation is valid
             # The check is inside the for loop so it can return if the architecture is valid. 

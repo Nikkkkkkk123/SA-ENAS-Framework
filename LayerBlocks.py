@@ -1,3 +1,4 @@
+from kiwisolver import Variable
 import torch.nn as nn
 import torch
 import numpy as np
@@ -14,7 +15,7 @@ class ConvBlock(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=False)
         )
     
     def forward(self, x):
@@ -42,7 +43,7 @@ class ResBlock (nn.Module):
         # If input and output channels are different then the shapes cannot be summed together.
         # This can be solved either with a conv1x1 or padding. We are initially going to just do padding 
         # but testing should be completed to see if 1x1 is viable or if potentially have two resblock options with padding and one with conv1x1
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
 
     def forward(self, input):
         SpareInput = input
@@ -55,9 +56,9 @@ class ResBlock (nn.Module):
         return x
 
 class MaxPool (nn.Module):
-    def __init__(self, kernel_size):
+    def __init__(self, kernel_size, stride=1):
         super(MaxPool, self).__init__()
-        self.pool = nn.MaxPool2d(kernel_size, 2, padding=(kernel_size // 2))
+        self.pool = nn.MaxPool2d(2, 2, 0, ceil_mode=False)
 
     def forward(self, x):
         x = self.pool(x)
@@ -66,7 +67,7 @@ class MaxPool (nn.Module):
 class AvgPool (nn.Module):
     def __init__(self, kernel_size, stride):
         super(AvgPool, self).__init__()
-        self.pool = nn.AvgPool2d(kernel_size, 2, padding=(kernel_size // 2))
+        self.pool = nn.AvgPool2d(2, 2, 0, ceil_mode=False)
 
     def forward(self, x):
         x = self.pool(x)
@@ -88,23 +89,26 @@ class Sum (nn.Module):
             - pad the smaller dimension with zeros
             - or use pooling to reduce the larger dimension to match the smaller
         '''
-        if input1.shape[1] != input2.shape[1]:
-            if input1.shape[1] < input2.shape[1]:
-                input1 = F.conv2d(input1, torch.zeros(input2.shape[1], input1.shape[1], 1, 1).to(input1.device), bias=None)
-            else:
-                input2 = F.conv2d(input2, torch.zeros(input1.shape[1], input2.shape[1], 1, 1).to(input2.device), bias=None)
-        # To determine the number of pooling layers required if the dimensions are different,
-        # the formula for number of devisions is utilised
         # No Pooling = log2 (larger dimension / smaller dimension)
         if input1.shape[2] != input2.shape[2]:
             if input1.shape[2] < input2.shape[2]:
                 noPools = math.floor(math.log2(input2.shape[2] / input1.shape[2]))
                 for i in range(noPools):
-                    input2 = F.max_pool2d(input2, kernel_size=2, stride=2, padding=0)
+                    input2 = F.max_pool2d(input2, kernel_size=2, stride=2, padding=0, ceil_mode=False)
             else:
                 noPools = math.floor(math.log2(input1.shape[2] / input2.shape[2]))
                 for i in range(noPools):
-                    input1 = F.max_pool2d(input1, kernel_size=2, stride=2, padding=0)
+                    input1 = F.max_pool2d(input1, kernel_size=2, stride=2, padding=0, ceil_mode=False)
+
+        if input1.shape[1] != input2.shape[1]:
+            if input1.shape[1] < input2.shape[1]:
+                offset = int(input2.size()[1] - input1.size()[1])
+                tmp = input2.data[:, :offset, :, :]
+                input1 = torch.cat((input1, tmp * 0), 1)
+            else:
+                offset = int(input1.size()[1] - input2.size()[1])
+                tmp = input1.data[:, :offset, :, :]
+                input2 = torch.cat((input2, tmp * 0), 1)
         output = torch.add(input1, input2)
         return output
 
@@ -131,11 +135,11 @@ class Con (nn.Module):
             # But if it was the same example as before this could cause an error as 64 does not evenly go into 14 and it would equal in 16 sized dimension
             numberPools = math.floor(math.log2(input1.size(2) / input2.size(2)))
             for i in range(numberPools):
-                input1 = F.max_pool2d(input1, kernel_size=2, stride=2, padding=0)
+                input1 = F.max_pool2d(input1, kernel_size=2, stride=2, padding=0, ceil_mode=False)
         elif input1.size(2) < input2.size(2):
             numberPools = math.floor(math.log2(input2.size(2) / input1.size(2)))
             for i in range(numberPools):
-                input2 = F.max_pool2d(input2, kernel_size=2, stride=2, padding=0)
+                input2 = F.max_pool2d(input2, kernel_size=2, stride=2, padding=0, ceil_mode=False)
 
         output = torch.cat((input1,  input2), dim=1)
         return output
@@ -220,7 +224,7 @@ class model (nn.Module):
                 generatedLayer = Con()
                 return generatedLayer
             case "MP" | "AP":
-                generatedLayer = MaxPool(layer.getKernelSize()) if layer.getNodeType() == "MP" else AvgPool(layer.getKernelSize(), layer.getKernelSize())
+                generatedLayer = MaxPool(layer.getKernelSize(), layer.getKernelSize()) if layer.getNodeType() == "MP" else AvgPool(layer.getKernelSize(), layer.getKernelSize())
                 return generatedLayer
             case "LIN":
                 return LinearBlock(layer.getConnectionOutputSize(1), self.numberClasses, layer.getImageDimension())
@@ -273,7 +277,7 @@ class model (nn.Module):
                 connection2Output = self._getOutputConnection(output, layerIndex, 2)
                 output[layerIndex] = layer(connection1Output, connection2Output)
             elif isinstance(layer, MaxPool) | isinstance(layer, AvgPool):
-                if connection1Output.size(2) >= 1:
+                if connection1Output.size(2) > 1:
                     output[layerIndex] = layer(connection1Output)
                 else:
                     output[layerIndex] = connection1Output            

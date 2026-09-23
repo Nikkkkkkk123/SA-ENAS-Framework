@@ -30,8 +30,8 @@ class LayerDefinitions:
 
     MUTATIONRULES: dict[str, list[str]] = {
         "IN": [],
-        "RB": ["TOG", "CHANGETYPE", "CCONN"],
-        "CB": ["TOG", "CHANGETYPE", "CCONN"],
+        "RB": ["TOG", "CHANGETYPE", "CCONN", "CPARAM"],
+        "CB": ["TOG", "CHANGETYPE", "CCONN", "CPARAM"],
         "MP": ["TOG", "CHANGETYPE", "CCONN"],
         "AP": ["TOG", "CHANGETYPE", "CCONN"],
         "CON": ["TOG", "CHANGETYPE", "CCONN"],
@@ -43,8 +43,8 @@ class LayerDefinitions:
         "IN": [],
         "RB": ["filterSize", "kernelSize"],
         "CB": ["filterSize", "kernelSize"],
-        "MP": ["kernelSize"],
-        "AP": ["kernelSize"],
+        "MP": [],
+        "AP": [],
         "CON": [],
         "SUM": [],
         "LIN": []
