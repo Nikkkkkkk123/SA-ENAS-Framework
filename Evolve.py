@@ -74,9 +74,6 @@ class Evolve:
         self.log.flush()
         self.runCurrentGenModel(self._currentGeneration)
 
-        for generation in range (1, self._noGenerations):
-            print(f"Generation {generation}/{self._noGenerations}")
-            self.log.write(f"{datetime.now()}: Generation {generation}/{self._noGenerations}\n")
         for generation in range (0, self._noGenerations):
             print(f"Generation {generation + 1}/{self._noGenerations}")
             self.log.write(f"{datetime.now()}: Generation {generation + 1}/{self._noGenerations}\n")
@@ -120,7 +117,6 @@ class Evolve:
             self.log.write(f"{datetime.now()}: Invalid encoded model provided for final evaluation: {encoded_model}\n")
             self.log.flush()
             raise ValueError(f"Invalid encoded model provided for final evaluation: {encoded_model}")
-
 
         model = LayerBlocks.model(final_architecture, len(self.classNames), self._inputChannels, self._imageSize)
         final_architecture.setNoParameters(sum(p.numel() for p in model.parameters() if p.requires_grad))
@@ -357,13 +353,11 @@ class Evolve:
         for candidate in self._currentGeneration:
             # We dont want to predict the fitness of a candidate that has already been manually evaluated
             if not candidate.getTrained():
-                candidate.predictFitness(self.surrogate)
                 predicted = candidate.predictFitness(self.surrogate)
                 predictedMean += predicted
                 self.log.write(f"{datetime.now()}: Candidate Architecture: {candidate.getEncodedArchitecture()} predicted fitness: {predicted}\n")
                 self.log.flush()
                 self._entirePopulation.remove(candidate.getActiveEncoding())
-
         self.log.write(f"{datetime.now()}: Overall generation predicted mean: {(predictedMean / len(self._currentGeneration) - 2)}\n")
         self.log.flush()
         # Return the top 10% candidates to be manually evaluated. If it is 0 then return only the top candidate
@@ -373,7 +367,6 @@ class Evolve:
         self._currentGeneration.sort(key=lambda x: x.getFitness(), reverse=True)
         if len(self._currentGeneration) // 10 == 0:
             return [self._currentGeneration[0]]
-
         
         bestUntrained = [candidate for candidate in self._currentGeneration if not candidate.getTrained()]
         bestUntrained = bestUntrained[:5]
