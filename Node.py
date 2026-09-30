@@ -40,6 +40,11 @@ class Node:
 
     def getConnection2 (self) -> Node:
         return self._connection2
+
+    def getConnection (self, connectionNo: int) -> Node:
+        if connectionNo == 1:
+            return self.getConnection1()
+        return self.getConnection2()
     
     def setActive (self, isActive: bool) -> None:
         self._isActive = isActive
@@ -57,6 +62,12 @@ class Node:
 
     def changeConnection2 (self, newConnection: Node) -> None:
         self._connection2 = newConnection
+
+    def changeConnection (self, connectionNo: int, newConnection: Node) -> None:
+        if connectionNo == 1:
+            self.changeConnection1(newConnection)
+        else:
+            self.changeConnection2(newConnection)
 
     def getFilterSize (self) -> int:
         return self._filterSize

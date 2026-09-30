@@ -139,6 +139,9 @@ class Architecture:
             newActiveNode._connection1 = self._activeArchitecture.get(node.getConnection1().getNodeId())
             if node.requiresTwoConnections():
                 newActiveNode._connection2 = self._activeArchitecture.get(node.getConnection2().getNodeId())
+            else:
+                newActiveNode._connection2 = None
+        
         else:
             self._activeArchitecture.pop(node.getNodeId())
             self._activeArchitecture[node.getNodeId()] = newActiveNode
@@ -246,29 +249,34 @@ class Architecture:
         layerKey = layer.getNodeId()
         if self._architecture.get(layerKey) is None:
             raise ValueError(f"Node with ID {layerKey} does not exist in the architecture")
+        elif layerKey == 1:
+            return False # This is a needed checker
 
         # If the layer requires two connections then randomly pick either one
-        newNodeId = random.randint(0, layerKey - 1)
-        newConnection = self._architecture.get(newNodeId)
-
+        connectionChoice = 1
         if layer.requiresTwoConnections():
-            return self._mutateTwoConnections(layer, newConnection)
+            connectionChoice = random.choice([1, 2])
 
-        layer.changeConnection1(newConnection)
+        self._selectRandomConnection(layer, layerKey, connectionChoice)
         return True
 
-    def _mutateTwoConnections (self, layer: Node, newConnection: Node) -> bool:
+    def _mutateTwoConnections (self, layer: Node) -> bool:
         layerKey = layer.getNodeId()
         if self._architecture.get(layerKey) is None:
             raise ValueError(f"Node with ID {layerKey} does not exist in the architecture")
 
         connectionChoice = random.choice([1, 2])
-
-        if connectionChoice == 1:
-            self._architecture[layerKey].changeConnection1(newConnection)
-        else:
-            self._architecture[layerKey].changeConnection2(newConnection)
         return True
+
+    def _selectRandomConnection (self, layer: Node, layerKey: int, connectionChoice: int = 1) -> bool:
+        newConnection = None
+        originalConnection = layer.getConnection(connectionChoice).getNodeId()
+        while newConnection == None or newConnection == originalConnection:
+            newConnection = random.randint(0, layerKey- 1)
+        newConnectionNode = self._architecture[newConnection]
+        layer.changeConnection(connectionChoice, newConnectionNode)
+        return True
+
 
     """
     Below are the functions regarding mutating the parameters of a layer
@@ -333,8 +341,9 @@ class Architecture:
             self._architecture[layer.getNodeId()].setKernelSize(newKernel)
 
     def print (self) -> None:
-        for layer in self._activeArchitecture.values():
+        for layer in self._architecture.values():
             print(f"Layer {layer.getNodeId()} is of type {layer.getNodeType()} with connection 1 being {layer.getConnection1().getNodeId() if layer.getConnection1() is not None else None} and connection 2 being {layer.getConnection2().getNodeId() if layer.getConnection2() is not None else None}")
+            print(f"Filter size is {layer.getFilterSize()} and kernel size is {layer.getKernelSize()}")
 
     def getActiveEncoding (self) -> list:
         if len(self._encodeActive) == 0:
