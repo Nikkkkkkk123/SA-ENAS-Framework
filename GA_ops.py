@@ -15,6 +15,7 @@ class GA_ops:
 
         parent1 = GA_ops._selectParent(currPopulation)
         parent2 = GA_ops._selectParent(currPopulation)
+        parent2 = GA_ops._selectParent(currPopulation, parent1)
 
         return parent1, parent2
 
@@ -22,6 +23,11 @@ class GA_ops:
     def _selectParent (currPopulation: list[arch]) -> arch:
         selectionPopulation = random.sample(currPopulation, 3) if len(currPopulation) >= 3 else random.sample(currPopulation, len(currPopulation))
         fittestCandidate = max(selectionPopulation, key=lambda candidate: candidate.getFitness())
+    def _selectParent (currPopulation: list[arch], alreadySelected = None) -> arch:
+        fittestCandidate = None
+        while fittestCandidate == None or fittestCandidate == alreadySelected:
+            selectionPopulation = random.sample(currPopulation, 3) if len(currPopulation) >= 3 else random.sample(currPopulation, len(currPopulation))
+            fittestCandidate = max(selectionPopulation, key=lambda arch: arch.getFitness())
         return fittestCandidate
 
     def performGA (currPopulation: list[arch], maxSize: int, inputChannels: int, imageSize: int, mutationRate: float, crossoverRate: float) -> tuple[arch, arch]:
@@ -54,6 +60,8 @@ class GA_ops:
             for i in range (1, 10):
                 point1 = random.randint(1, maxSize - 2)
                 point2 = random.randint(point1 + 1, maxSize - 1)
+                point1 = random.randint(1, maxSize - 1)
+                point2 = random.randint(point1 + 1, maxSize)
 
                 offspring1 = list(parent1._architecture.values())[0:point1] + list(parent2._architecture.values())[point1:point2] + list(parent1._architecture.values())[point2:]
                 offspring2 = list(parent2._architecture.values())[0:point1] + list(parent1._architecture.values())[point1:point2] + list(parent2._architecture.values())[point2:]
@@ -90,11 +98,14 @@ class GA_ops:
             offSpringCopy: arch
             offSpringCopy = copy.deepcopy(offspring) # This copy is used to store the original offspring incase mutation was unsucessful
             for i in range (1, maxSize):
+            for i in range (1, maxSize + 1): # This starts at one because the architecture graph includes the input node. Because it started at 1 it never had a chance to mutate the linear layer
                 mutateChance = random.random()
                 if mutateChance < mutationRate:
+                if mutateChance < 100:
                     succMutate: bool = False
                     while not succMutate:
                         mutationType = random.choice(GA_ops.mutationOptions)
+                        mutationType = LayerDefinitions.selectMutation(offSpringCopy.getLayer(i).getNodeType())
                         if LayerDefinitions.canMutateOption(offSpringCopy.getLayer(i).getNodeType(), mutationType):
                             succMutate = GA_ops.mutateSwitch(offSpringCopy, offSpringCopy.getLayer(i), mutationType)
 
