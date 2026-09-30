@@ -151,6 +151,7 @@ class LinearBlock (nn.Module):
         self.linear = nn.Sequential(
             # for some reasin this is adding up wrong?
             # Image width and height is being calculated incorrectly
+            nn.Flatten(),
             nn.Linear(in_features * imageDimension * imageDimension, out_features)
         ) 
     def forward(self, x):
@@ -270,8 +271,7 @@ class model (nn.Module):
                 # Need to get the connected layers index in the output array so that if one layer outputs to multiple then it is using the correct input size
                 output[layerIndex] = layer(connection1Output)
             elif isinstance(layer, LinearBlock):
-                temp = connection1Output.view(connection1Output.size(0), -1)
-                output[layerIndex] = layer(temp)
+                output[layerIndex] = layer(connection1Output)
             elif isinstance(layer, Con) | isinstance(layer, Sum):
                 layerIndex = self.activeArch[index]
                 connection2Output = self._getOutputConnection(output, layerIndex, 2)
