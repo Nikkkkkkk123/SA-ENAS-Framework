@@ -36,7 +36,7 @@ class LayerDefinitions:
         "AP": ["TOG", "CHANGETYPE", "CCONN"],
         "CON": ["TOG", "CHANGETYPE", "CCONN"],
         "SUM": ["TOG", "CHANGETYPE", "CCONN"],
-        "LIN": ["CHANGETYPE"]
+        "LIN": ["CCONN"]
     }
 
     LAYERPARAMETERS: dict[str, list[str]] = {
@@ -114,6 +114,10 @@ class LayerDefinitions:
         return False
 
     @classmethod
+    def selectMutation (cls, layerType: str) -> str:
+        return random.choice(LayerDefinitions.MUTATIONRULES[layerType])
+
+    @classmethod
     def encodeLayer (cls, layer: Node) -> list:
         layerType = layer.getNodeType()
         encodedType = LayerDefinitions.getLayerIndex(layerType)
@@ -121,6 +125,13 @@ class LayerDefinitions:
             return None
         connection1 = layer.getConnection1().getNodeId() if layer.getConnection1() is not None else 0
         connection2 = layer.getConnection2().getNodeId() if layer.getConnection2() is not None else 0
+
+        if LayerDefinitions.LAYERINDEX[encodedType] == "SUM" or LayerDefinitions.LAYERINDEX[encodedType] == "CON":
+            if connection2 < connection1:
+                tempConnection = connection1
+                connection1 = connection2
+                connection2 = tempConnection
+                
         originalFilter = layer.getFilterSize()
         originalKernel = layer.getKernelSize()
         encodedFilterSize = 0 if originalFilter is None or originalFilter == 0 else sorted(list(FILTER_SIZE)).index(originalFilter) + 1
