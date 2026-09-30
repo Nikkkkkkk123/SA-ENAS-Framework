@@ -77,6 +77,9 @@ class Evolve:
         for generation in range (1, self._noGenerations):
             print(f"Generation {generation}/{self._noGenerations}")
             self.log.write(f"{datetime.now()}: Generation {generation}/{self._noGenerations}\n")
+        for generation in range (0, self._noGenerations):
+            print(f"Generation {generation + 1}/{self._noGenerations}")
+            self.log.write(f"{datetime.now()}: Generation {generation + 1}/{self._noGenerations}\n")
             self.log.flush()
 
             # Perform crossover and mutation to produce offspring for the next generation
@@ -137,6 +140,7 @@ class Evolve:
     def  runCurrentGenModel (self, evaluateCandidateList: list) -> None:
         no_candidate = 1
         total_candidates = len(evaluateCandidateList)
+        meanCandidatePerformance = 0.0
         for candidate in evaluateCandidateList:
             # This is a just in case. this should not occur
             if candidate.getTrained():
@@ -155,6 +159,7 @@ class Evolve:
 
             self.runEpochs(model, optimizer, criterion, candidate)
             self._addToBestModels(candidate, candidate.getFitness())
+            meanCandidatePerformance += candidate.getFitness()
 
             # add the evaluated candidate to the surrogate model. If the surrogate is not enabled then the function will not do anything
             self._addSurTrain(candidate)
@@ -162,6 +167,7 @@ class Evolve:
             del model, optimizer, criterion
             gc.collect()
             torch.cuda.empty_cache() 
+        self.log.write(f"{datetime.now()}: Generation mean fitness performance: {(meanCandidatePerformance / len(evaluateCandidateList))}\n")
 
     def runEpochs (self, model: torch.nn.Module, optimizer: torch.optim.Optimizer, criterion: torch.nn.Module, candidate: arch) -> None:
         for epoch in range(self._epochs):
@@ -179,9 +185,14 @@ class Evolve:
             loop.close()
         overall = (f1ScoreResult * 100) # dont want to compute every time but this is mainly for testing at this point
 
+        predictedFitness = None
+        if candidate.getFitness() != 0:
+            predictedFitness = candidate.getFitness()
         candidate.calculateFitness(overall)
         candidate.setTrained(True)
         self.log.write(f"{datetime.now()}: Evaluated candidate has a fitness of {candidate.getFitness()}\n")
+        if predictedFitness != None:
+            self.log.write(f"{datetime.now()}: Surrogate predicted: {predictedFitness} difference {(predictedFitness - candidate.getFitness())}\n")
         self.log.flush()
 
     def _trainModel (self, model: torch.nn.Module, optimizer: torch.optim.Optimizer, criterion: torch.nn.Module, loop: tqdm) -> None:
@@ -342,12 +353,19 @@ class Evolve:
             self.surLabels.append(candidate.getFitness())
 
     def _predictFitnessForCurrentGen (self) -> list[arch]:
+        predictedMean = 0.0
         for candidate in self._currentGeneration:
             # We dont want to predict the fitness of a candidate that has already been manually evaluated
             if not candidate.getTrained():
                 candidate.predictFitness(self.surrogate)
+                predicted = candidate.predictFitness(self.surrogate)
+                predictedMean += predicted
+                self.log.write(f"{datetime.now()}: Candidate Architecture: {candidate.getEncodedArchitecture()} predicted fitness: {predicted}\n")
+                self.log.flush()
                 self._entirePopulation.remove(candidate.getActiveEncoding())
 
+        self.log.write(f"{datetime.now()}: Overall generation predicted mean: {(predictedMean / len(self._currentGeneration) - 2)}\n")
+        self.log.flush()
         # Return the top 10% candidates to be manually evaluated. If it is 0 then return only the top candidate
         return self._selectedEvalCandidates()
 
@@ -356,8 +374,13 @@ class Evolve:
         if len(self._currentGeneration) // 10 == 0:
             return [self._currentGeneration[0]]
 
+        
         bestUntrained = [candidate for candidate in self._currentGeneration if not candidate.getTrained()]
         bestUntrained = bestUntrained[:5]
+        predictedMean = 0.0
         for candidate in bestUntrained:
             self.addToEntirePopulation(candidate)
+            predictedMean += candidate.getFitness()
+        self.log.write(f"{datetime.now()}: Selected candidate mean fitness: {(predictedMean / len(bestUntrained))}\n")
+        self.log.flush()
         return bestUntrained # this will return the top 5 candidates that have not been manually evaluated
