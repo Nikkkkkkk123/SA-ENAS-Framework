@@ -41,6 +41,11 @@ class GenerateArchitecture:
         connection1 = architecture[layer[1]] if layer[1] in architecture else None
         connection2 = architecture[layer[2]] if layer[2] in architecture else None
 
+        if layerType == 'SUM' or layerType == 'CON':
+            tempcon = connection1
+            connection1 = connection2
+            connection2 = tempcon
+
         filterSize = layer[3] if len(layer) > 3 else None
         kernelSize = layer[4] if len(layer) > 4 else None
 

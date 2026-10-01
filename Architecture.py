@@ -115,7 +115,8 @@ class Architecture:
 
     def getActive(self) -> dict[int, Node]:
         connectionSet = set()
-        if self.checkConnections(self._architecture.get(self.maxSize), connectionSet):
+        connectionSet = self.checkConnections(self._architecture.get(self.maxSize), connectionSet)
+        if self._addConnectionSet(connectionSet):
             self._encodeActive = encode.encode(list(self._activeArchitecture.values()), len(self._activeArchitecture) - 1)
         return self._activeArchitecture
 
@@ -124,30 +125,46 @@ class Architecture:
             return False
 
         node.setActive(True)
-        newActiveNode = copy.deepcopy(node)
         if node.getNodeType() == ld.getInputLayerStr():
-            self._activeArchitecture[node.getNodeId()] = newActiveNode
-            return True
+            self._activeArchitecture[node.getNodeId()] = copy.deepcopy(node)
+            return connectionSet
+        #     return True
         connectionSet.add(node.getNodeId())
 
         self.checkConnections(node.getConnection1(), connectionSet)
         if node.requiresTwoConnections():
             self.checkConnections(node.getConnection2(), connectionSet)
 
-        if self._activeArchitecture.get(node.getNodeId()) is None:
-            self._activeArchitecture[node.getNodeId()] = newActiveNode
-            newActiveNode._connection1 = self._activeArchitecture.get(node.getConnection1().getNodeId())
-            if node.requiresTwoConnections():
-                newActiveNode._connection2 = self._activeArchitecture.get(node.getConnection2().getNodeId())
-            else:
-                newActiveNode._connection2 = None
+        # if self._activeArchitecture.get(node.getNodeId()) is None:
+        #     temp = list(self._activeArchitecture.items())
+        #     temp.insert(node.getNodeId(), (node.getNodeId(), node))
+        #     tempdic = dict(temp)
+        #     self._activeArchitecture[node.getNodeId()] = newActiveNode
+        #     newActiveNode._connection1 = self._activeArchitecture.get(node.getConnection1().getNodeId())
+        #     if node.requiresTwoConnections():
+        #         newActiveNode._connection2 = self._activeArchitecture.get(node.getConnection2().getNodeId())
+        #     else:
+        #         newActiveNode._connection2 = None
         
-        else:
-            self._activeArchitecture.pop(node.getNodeId())
-            self._activeArchitecture[node.getNodeId()] = newActiveNode
+        # else:
+        #     self._activeArchitecture.pop(node.getNodeId())
+        #     self._activeArchitecture[node.getNodeId()] = newActiveNode
 
-        newActiveNode._nodeId = list(self._activeArchitecture.keys()).index(node.getNodeId())
-        return True
+        # newActiveNode._nodeId = list(self._activeArchitecture.keys()).index(node.getNodeId())
+        return connectionSet
+
+    def _addConnectionSet (self, connectionSet: set) -> bool:
+        sorted(connectionSet)
+        for i in range(1, len(connectionSet) + 1):
+            node = self._architecture[connectionSet.pop()]
+            activeNode = copy.deepcopy(node)
+            self._activeArchitecture[node.getNodeId()] = activeNode
+            activeNode._connection1 = self._activeArchitecture.get(node.getConnection1().getNodeId())
+            if node.requiresTwoConnections():
+                activeNode.changeConnection2(self._activeArchitecture.get(node.getConnection2().getNodeId()))
+            else:
+                activeNode._connection2 = None
+            activeNode._nodeId = i
 
     def _containsKey (self, key: int) -> bool:
         if self._architecture.get(key) is None:
@@ -167,11 +184,6 @@ class Architecture:
 
     def getActiveArch (self) -> dict[int, Node]:
         return self._activeArchitecture
-
-    def canAdd (self) -> bool:
-        if self.getActiveArchLength() < self.maxSize - 1:
-            return True
-        return False
 
     def canRemove (self) -> bool:
         if self.getActiveArchLength() > 2:
@@ -199,17 +211,21 @@ class Architecture:
         if self._activeArchitecture.get(layerKey) is None:
             raise ValueError(f"Node with ID {layerKey} is not currently apart of the active architecture")
 
+        # a just in case for a later version that may allow for linear layers everywhere. but it cant be mutated at this time so it doesnt matter
         if not self.canRemove():
             return False
 
         # any node pointing to it in the active architecture needs to now point to the removing nodes input connection
         # I decided to only take connection 1 since its the primary input. if it was a node like sum, if that mutated to anything else
         # it would only take connection 1. 
+        layerNode = self.getNode(layerKey)
+        connection1 = layerNode.getConnection1()
+        connection2 = layerNode.getConnection2()
         for key in list(self._activeArchitecture.keys()):
-            if self._architecture[key].getConnection1() == self.getNode(layerKey):
-                self._architecture[key].changeConnection1(self.getNode(layerKey).getConnection1())
-            if self._architecture[key].getConnection2() == self.getNode(layerKey):
-                self._architecture[key].changeConnection2(self.getNode(layerKey).getConnection1())
+            if self._architecture[key].getConnection1() == layerNode:
+                self._architecture[key].changeConnection1(connection1)
+            if self._architecture[key].getConnection2() == layerNode:
+                self._architecture[key].changeConnection2(connection1)
 
         self._removeFromActiveArchitecture(layerKey)
         return True
@@ -224,9 +240,6 @@ class Architecture:
         # Just in case this should be checked before this function is called
         if self._activeArchitecture.get(layerKey) is not None:
             raise ValueError(f"Node with ID {layerKey} is already apart of the active architecture")
-
-        if not self.canAdd():
-            return False
         
         # My current plan is to find the first active layer after this node then make its connection 1 point to this and then make this node take the original as its incoming
         # then find the next active layer taking that node as an input and swap it
@@ -234,9 +247,12 @@ class Architecture:
         #           | -> c           
         # become
         # [input -> a -> c -> b -> output]
+        mutatingNode = self._architecture[layerKey]
         for key in list(self._activeArchitecture.keys()):
             if key > layerKey:
-                self._architecture[layerKey].changeConnection1(self._architecture[key].getConnection1())
+                # so if it requires to connections then i just want to see if maybe its already taking it in. if so just dont both changing it.
+                if not mutatingNode.requiresTwoConnections() or self._architecture[key].getConnection1().getNodeId() != mutatingNode.getConnection2().getNodeId():
+                    mutatingNode.changeConnection1(self._architecture[key].getConnection1())
                 self._architecture[key].changeConnection1(self.getNode(layerKey))
                 break
 
@@ -249,7 +265,7 @@ class Architecture:
         layerKey = layer.getNodeId()
         if self._architecture.get(layerKey) is None:
             raise ValueError(f"Node with ID {layerKey} does not exist in the architecture")
-        elif layerKey == 1:
+        elif layerKey == 1: # This is since it will only connect to the input layer
             return False # This is a needed checker
 
         # If the layer requires two connections then randomly pick either one
@@ -258,14 +274,6 @@ class Architecture:
             connectionChoice = random.choice([1, 2])
 
         self._selectRandomConnection(layer, layerKey, connectionChoice)
-        return True
-
-    def _mutateTwoConnections (self, layer: Node) -> bool:
-        layerKey = layer.getNodeId()
-        if self._architecture.get(layerKey) is None:
-            raise ValueError(f"Node with ID {layerKey} does not exist in the architecture")
-
-        connectionChoice = random.choice([1, 2])
         return True
 
     def _selectRandomConnection (self, layer: Node, layerKey: int, connectionChoice: int = 1) -> bool:
